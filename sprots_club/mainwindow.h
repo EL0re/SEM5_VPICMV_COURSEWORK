@@ -7,6 +7,8 @@
 #include <QFileInfo>
 #include <QSqlTableModel>
 #include <QSqlQuery>
+#include <QEvent>
+#include <QKeyEvent>
 
 namespace Ui {
 class MainWindow;
@@ -16,8 +18,8 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
-//protected:
-//    bool eventFilter(QObject *obj, QEvent *event) override;
+protected:
+    bool eventFilter(QObject *obj, QEvent *event) override;
 
 public:
     explicit MainWindow(QWidget *parent = nullptr);
@@ -26,7 +28,7 @@ public:
 private slots:
     void on_pushButton_clicked();
     void on_pushButton_2_clicked();
-//     void onModelDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight);
+     void onModelDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight);
 
 private:
     Ui::MainWindow *ui;
@@ -34,7 +36,7 @@ private:
     void ensureTrailingEmptyRow();
     bool isRowFilled(int row) const;
     void reloadview();
-//    void commitLastRow();
+    void commitLastRow();
 };
 
 #endif // MAINWINDOW_H

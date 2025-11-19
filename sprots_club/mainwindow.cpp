@@ -7,13 +7,17 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     ui->tableView->setSortingEnabled(true);
+    ui->tableView->installEventFilter(this);
     QSqlDatabase mydb = QSqlDatabase::addDatabase("QSQLITE");
     mydb.setDatabaseName("C:/Users/XE4/Desktop/sports_club.db");
     model = new QSqlTableModel(this);
     model->setTable("users");
     model->select();
     model->setEditStrategy(QSqlTableModel::OnManualSubmit);
+    connect(model, &QSqlTableModel::dataChanged,
+                this, &MainWindow::onModelDataChanged);
     reloadview();
+    ui->tableView->hideColumn(0);
 }
 
 MainWindow::~MainWindow()
@@ -37,13 +41,13 @@ void MainWindow::on_pushButton_2_clicked()
     model->select();
     model->setEditStrategy(QSqlTableModel::OnManualSubmit);
     reloadview();
+    ui->tableView->hideColumn(0);
 }
 
 void MainWindow::ensureTrailingEmptyRow()
 {
     if (!model) return;
     int rows = model->rowCount();
-    // Если таблица пуста или последняя строка НЕ пустая — добавляем пустую
     if (rows == 0 || isRowFilled(rows - 1)) {
         bool ok = model->insertRow(rows);
         if (!ok) {
@@ -55,14 +59,10 @@ void MainWindow::ensureTrailingEmptyRow()
 bool MainWindow::isRowFilled(int row) const
 {
     if (!model) return false;
-
-    // Перечислим обязательные поля, которые должны быть заполнены:
-    // адаптируй имена полей под свою схему: "login","password","full_name","role"
     QStringList required = {"login", "password", "full_name", "role"};
-
     for (const QString &fieldName : required) {
         int col = model->fieldIndex(fieldName);
-        if (col < 0) continue; // если поле не найдено — пропускаем
+        if (col < 0) continue;
         QVariant v = model->data(model->index(row, col));
         if (!v.isValid() || v.toString().trimmed().isEmpty()) {
             return false;
@@ -75,4 +75,51 @@ void MainWindow::reloadview(){
     ui->tableView->setModel(model);
     ui->tableView->resizeColumnsToContents();
     ensureTrailingEmptyRow();
+    ui->tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+}
+
+void MainWindow::onModelDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight)
+{
+    Q_UNUSED(topLeft)
+    Q_UNUSED(bottomRight)
+    int last = model->rowCount() - 1;
+    if (last >= 0 && isRowFilled(last)) {
+        commitLastRow();
+    }
+}
+
+void MainWindow::commitLastRow()
+{
+    if (!model) return;
+
+    int lastRow = model->rowCount() - 1;
+    if (lastRow < 0) return;
+    if (!isRowFilled(lastRow)) {
+        return;
+    }
+    if (!model->submitAll()) {
+        QString err = model->lastError().text();
+        model->revertAll();
+        return;
+    }
+    ensureTrailingEmptyRow();
+    ui->tableView->resizeColumnsToContents();
+}
+
+bool MainWindow::eventFilter(QObject *obj, QEvent *event)
+{
+    if (obj == ui->tableView && event->type() == QEvent::KeyPress) {
+        QKeyEvent *keyEvent = static_cast<QKeyEvent*>(event);
+        if (keyEvent->key() == Qt::Key_Return || keyEvent->key() == Qt::Key_Enter) {
+            QModelIndex cur = ui->tableView->currentIndex();
+            if (!cur.isValid()) return false;
+            int curRow = cur.row();
+            if (curRow == model->rowCount() - 1) {
+                ui->tableView->closePersistentEditor(cur);
+                commitLastRow();
+                return true;
+            }
+        }
+    }
+    return QMainWindow::eventFilter(obj, event);
 }
