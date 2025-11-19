@@ -17,10 +17,10 @@
    <widget class="QTableView" name="tableView">
     <property name="geometry">
      <rect>
-      <x>160</x>
-      <y>0</y>
+      <x>170</x>
+      <y>80</y>
       <width>1031</width>
-      <height>791</height>
+      <height>711</height>
      </rect>
     </property>
    </widget>
@@ -48,6 +48,19 @@
     </property>
     <property name="text">
      <string>ПОЛЬЗОВАТЕЛИ</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="searchLineEdit">
+    <property name="geometry">
+     <rect>
+      <x>180</x>
+      <y>20</y>
+      <width>291</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="placeholderText">
+     <string notr="true" comment="ПОИСК ПО ФИО"/>
     </property>
    </widget>
   </widget>
