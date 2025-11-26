@@ -8,8 +8,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     ui->tableView->setSortingEnabled(true);
     ui->tableView->installEventFilter(this);
-    QSqlDatabase mydb = QSqlDatabase::addDatabase("QSQLITE");
-    mydb.setDatabaseName("C:/Users/XE4/Desktop/sports_club.db");
+//    QSqlDatabase mydb = QSqlDatabase::addDatabase("QSQLITE");
+//    mydb.setDatabaseName("C:/Users/XE4/Desktop/sports_club.db");
     model = new QSqlTableModel(this);
     model->setTable("users");
     model->select();
