@@ -30,7 +30,7 @@ void logindialog::tryLogin()
     }
 
     QSqlQuery q;
-    q.prepare("SELECT role FROM users WHERE login = :l AND password = :p");
+    q.prepare("SELECT full_name, role FROM users WHERE login = :l AND password = :p");
     q.bindValue(":l", login);
     q.bindValue(":p", pass);
 
@@ -41,7 +41,8 @@ void logindialog::tryLogin()
     }
 
     if (q.next()) {
-        m_role = q.value(0).toString();
+        m_fullName = q.value(0).toString();   // full_name
+        m_role     = q.value(1).toString();   // role
         m_username = login;
 
         accept();   // Вход успешен → закрываем окно

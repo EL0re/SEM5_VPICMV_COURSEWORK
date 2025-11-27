@@ -1,15 +1,21 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-MainWindow::MainWindow(QWidget *parent) :
+MainWindow::MainWindow(const QString &fullName, QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
     ui->tableView->setSortingEnabled(true);
     ui->tableView->installEventFilter(this);
-//    QSqlDatabase mydb = QSqlDatabase::addDatabase("QSQLITE");
-//    mydb.setDatabaseName("C:/Users/XE4/Desktop/sports_club.db");
+    QPixmap pixmap("C:/Users/XE4/Desktop/xui.png");
+    ui->imagelabel->setPixmap(pixmap);
+    ui->imagelabel->setPixmap(pixmap.scaled(ui->imagelabel->width(),
+                                          ui->imagelabel->height(),
+                                          Qt::KeepAspectRatio));
+    ui->FIO_Label->setText(fullName);
+    QSqlDatabase mydb = QSqlDatabase::addDatabase("QSQLITE");
+    mydb.setDatabaseName("C:/Users/XE4/Desktop/sports_club.db");
     model = new QSqlTableModel(this);
     model->setTable("users");
     model->select();
@@ -23,6 +29,26 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->tableView->setModel(proxyModel);
     ui->tableView->hideColumn(0);
     ui->searchLineEdit->setPlaceholderText("Поиск по ФИО");
+    model = new QSqlTableModel(this, QSqlDatabase::database());
+    model->setTable("users");
+    model->select();
+    model->setEditStrategy(QSqlTableModel::OnManualSubmit);
+    connect(model, &QSqlTableModel::dataChanged,
+            this, &MainWindow::onModelDataChanged);
+
+    proxyModel->setSourceModel(model);
+
+    int fullNameCol = model->fieldIndex("full_name");
+    if (fullNameCol >= 0) {
+        proxyModel->setFilterKeyColumn(fullNameCol);
+        ui->searchLineEdit->setEnabled(true);
+    } else {
+        proxyModel->setFilterKeyColumn(-1);
+        ui->searchLineEdit->setEnabled(false);
+    }
+
+    reloadview();
+    ui->tableView->hideColumn(0);
 }
 
 MainWindow::~MainWindow()
@@ -74,6 +100,12 @@ void MainWindow::on_pushButton_2_clicked()
     ui->tableView->hideColumn(0);
 }
 
+void MainWindow::on_logoutButton_clicked()
+{
+    logoutRequested = true;
+    this->close();
+}
+
 void MainWindow::ensureTrailingEmptyRow()
 {
     if (!model) return;
@@ -102,7 +134,6 @@ bool MainWindow::isRowFilled(int row) const
 }
 
 void MainWindow::reloadview(){
-    // Устанавливаем модель представления — proxyModel содержит ссылку на текущую source-модель
     ui->tableView->setModel(proxyModel);
     ui->tableView->resizeColumnsToContents();
     ensureTrailingEmptyRow();
@@ -158,14 +189,10 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 void MainWindow::on_searchLineEdit_textChanged(const QString &text)
 {
     if (!proxyModel) return;
-
-    // Если нет текстового поиска — сбрасываем фильтр
     if (text.trimmed().isEmpty()) {
         proxyModel->setFilterRegularExpression(QRegularExpression());
         return;
     }
-
-    // Экранируем пользовательский ввод и делаем нечувствительный к регистру поиск по подстроке
     QString escaped = QRegularExpression::escape(text);
     QRegularExpression re(escaped, QRegularExpression::CaseInsensitiveOption);
     proxyModel->setFilterRegularExpression(re);

@@ -8,33 +8,20 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
     QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
     db.setDatabaseName("C:/Users/XE4/Desktop/sports_club.db");
-    db.open();
-    QSqlQuery test("SELECT * FROM users");
-    while (test.next()) {
-        qDebug() << "USER:" << test.value("login").toString()
-                 << test.value("password").toString()
-                 << test.value("role").toString();
+    if (!db.open()) return -1;
+    while (true)
+    {
+        logindialog login;
+        if (login.exec() != QDialog::Accepted)
+            return 0;
+        if (login.role() != "admin") {
+            continue;
+        }
+        MainWindow w(login.fullName());
+        w.show();
+        a.exec();
+        if (!w.logoutRequested)
+                    return 0;
     }
-    if (!db.open()) {
-        qDebug() << "DB ERROR:" << db.lastError().text();
-        return -1;
-    }
-
-    // Показываем окно логина
-    logindialog login;
-    if (login.exec() != QDialog::Accepted) {
-        // если пользователь закрыл окно или нажал отмену — выходим
-        return 0;
-    }
-
-    // Проверяем роль
-    if (login.role() != "admin") {
-        return 0;
-    }
-
-    // Успешная авторизация → запускаем основное окно
-    MainWindow w;
-    w.show();
-
-    return a.exec();
+    return 0;
 }

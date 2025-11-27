@@ -19,6 +19,7 @@ public:
     explicit logindialog(QWidget *parent = nullptr);
     ~logindialog();
 
+    QString fullName() const { return m_fullName; }
     QString role() const { return m_role; }
     QString username() const { return m_username; }
 
@@ -29,6 +30,8 @@ private:
     Ui::logindialog *ui;
     QString m_role;
     QString m_username;
+    QString m_fullName;
+
 };
 
 #endif // LOGINDIALOG_H
