@@ -24,10 +24,9 @@ protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
 
 public:
-    bool logoutRequested = false;
     explicit MainWindow(const QString &fullName, QWidget *parent = nullptr);
-    explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+    bool logoutRequested = false;
 
 private slots:
     void on_searchLineEdit_textChanged(const QString &text);

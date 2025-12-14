@@ -14,9 +14,8 @@ MainWindow::MainWindow(const QString &fullName, QWidget *parent) :
                                           ui->imagelabel->height(),
                                           Qt::KeepAspectRatio));
     ui->FIO_Label->setText(fullName);
-    QSqlDatabase mydb = QSqlDatabase::addDatabase("QSQLITE");
-    mydb.setDatabaseName("C:/Users/XE4/Desktop/sports_club.db");
-    model = new QSqlTableModel(this);
+
+    model = new QSqlTableModel(this, QSqlDatabase::database());
     model->setTable("users");
     model->select();
     model->setEditStrategy(QSqlTableModel::OnManualSubmit);
