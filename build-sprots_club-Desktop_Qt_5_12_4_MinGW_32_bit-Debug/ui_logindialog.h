@@ -14,6 +14,7 @@
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QLineEdit>
 #include <QtWidgets/QPushButton>
+#include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 
 QT_BEGIN_NAMESPACE
@@ -21,41 +22,67 @@ QT_BEGIN_NAMESPACE
 class Ui_logindialog
 {
 public:
-    QLineEdit *passEdit;
+    QPushButton *loginBtn;
+    QWidget *widget;
+    QVBoxLayout *verticalLayout_3;
+    QLabel *login_label;
     QLineEdit *loginEdit;
     QLabel *pass_label;
-    QLabel *login_label;
-    QPushButton *loginBtn;
+    QLineEdit *passEdit;
 
     void setupUi(QWidget *logindialog)
     {
         if (logindialog->objectName().isEmpty())
             logindialog->setObjectName(QString::fromUtf8("logindialog"));
-        logindialog->resize(300, 400);
-        passEdit = new QLineEdit(logindialog);
-        passEdit->setObjectName(QString::fromUtf8("passEdit"));
-        passEdit->setGeometry(QRect(50, 225, 200, 50));
-        loginEdit = new QLineEdit(logindialog);
-        loginEdit->setObjectName(QString::fromUtf8("loginEdit"));
-        loginEdit->setGeometry(QRect(50, 75, 200, 50));
-        pass_label = new QLabel(logindialog);
-        pass_label->setObjectName(QString::fromUtf8("pass_label"));
-        pass_label->setGeometry(QRect(0, 150, 300, 50));
+        logindialog->resize(382, 490);
+        loginBtn = new QPushButton(logindialog);
+        loginBtn->setObjectName(QString::fromUtf8("loginBtn"));
+        loginBtn->setGeometry(QRect(90, 440, 200, 40));
+        loginBtn->setMinimumSize(QSize(100, 30));
+        loginBtn->setMaximumSize(QSize(200, 40));
+        widget = new QWidget(logindialog);
+        widget->setObjectName(QString::fromUtf8("widget"));
+        widget->setGeometry(QRect(10, 12, 361, 391));
+        verticalLayout_3 = new QVBoxLayout(widget);
+        verticalLayout_3->setObjectName(QString::fromUtf8("verticalLayout_3"));
+        verticalLayout_3->setContentsMargins(0, 0, 0, 0);
+        login_label = new QLabel(widget);
+        login_label->setObjectName(QString::fromUtf8("login_label"));
+        login_label->setMaximumSize(QSize(359, 100));
         QFont font;
         font.setPointSize(15);
         font.setBold(true);
         font.setWeight(75);
-        pass_label->setFont(font);
-        pass_label->setAlignment(Qt::AlignCenter);
-        login_label = new QLabel(logindialog);
-        login_label->setObjectName(QString::fromUtf8("login_label"));
-        login_label->setGeometry(QRect(0, 12, 300, 50));
         login_label->setFont(font);
         login_label->setLayoutDirection(Qt::LeftToRight);
         login_label->setAlignment(Qt::AlignCenter);
-        loginBtn = new QPushButton(logindialog);
-        loginBtn->setObjectName(QString::fromUtf8("loginBtn"));
-        loginBtn->setGeometry(QRect(75, 325, 150, 50));
+
+        verticalLayout_3->addWidget(login_label);
+
+        loginEdit = new QLineEdit(widget);
+        loginEdit->setObjectName(QString::fromUtf8("loginEdit"));
+        loginEdit->setMinimumSize(QSize(230, 35));
+
+        verticalLayout_3->addWidget(loginEdit, 0, Qt::AlignHCenter);
+
+        pass_label = new QLabel(widget);
+        pass_label->setObjectName(QString::fromUtf8("pass_label"));
+        pass_label->setMinimumSize(QSize(100, 100));
+        pass_label->setMaximumSize(QSize(359, 100));
+        pass_label->setFont(font);
+        pass_label->setAlignment(Qt::AlignCenter);
+
+        verticalLayout_3->addWidget(pass_label);
+
+        passEdit = new QLineEdit(widget);
+        passEdit->setObjectName(QString::fromUtf8("passEdit"));
+        passEdit->setMinimumSize(QSize(230, 35));
+
+        verticalLayout_3->addWidget(passEdit, 0, Qt::AlignHCenter);
+
+        passEdit->raise();
+        loginEdit->raise();
+        login_label->raise();
 
         retranslateUi(logindialog);
 
@@ -65,9 +92,9 @@ public:
     void retranslateUi(QWidget *logindialog)
     {
         logindialog->setWindowTitle(QApplication::translate("logindialog", "Form", nullptr));
-        pass_label->setText(QApplication::translate("logindialog", "\320\237\320\220\320\240\320\236\320\233\320\254", nullptr));
-        login_label->setText(QApplication::translate("logindialog", "\320\233\320\236\320\223\320\230\320\235", nullptr));
         loginBtn->setText(QApplication::translate("logindialog", "\320\222\320\236\320\231\320\242\320\230", nullptr));
+        login_label->setText(QApplication::translate("logindialog", "\320\233\320\236\320\223\320\230\320\235", nullptr));
+        pass_label->setText(QApplication::translate("logindialog", "\320\237\320\220\320\240\320\236\320\233\320\254", nullptr));
     } // retranslateUi
 
 };

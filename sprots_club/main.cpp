@@ -11,6 +11,7 @@ int main(int argc, char *argv[])
 
     QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
     QString dbPath = QDir::cleanPath(QApplication::applicationDirPath() + "/../sports_club.db");
+    //пока крч так: копируйте бд в папку билда, иначе он будет создавать новую. С добавлением пути в исходную папку проекта потом разберемся
     qDebug() << "Путь к БД:" << dbPath;
         db.setDatabaseName(dbPath);
 

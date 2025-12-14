@@ -24,11 +24,42 @@ void logindialog::tryLogin()
     qDebug() << "INPUT LOGIN =" << login;
     qDebug() << "INPUT PASS  =" << pass;
 
-    if (login.isEmpty() || pass.isEmpty()) {
+    if (login.isEmpty() || pass.isEmpty())
+    {
         QMessageBox::warning(this, "Ошибка", "Введите логин и пароль.");
         return;
     }
+//
+    // ОТЛАДКА: Проверим подключение к БД
+       QSqlDatabase db = QSqlDatabase::database();
+       if (!db.isOpen()) {
+           qDebug() << "БД не открыта!";
+           QMessageBox::critical(this, "Ошибка", "Нет подключения к базе данных.");
+           return;
+       }
 
+       qDebug() << "БД открыта, драйвер:" << db.driverName();
+       qDebug() << "Имя БД:" << db.databaseName();
+
+       // Проверим существование таблицы
+       QSqlQuery checkTable("SELECT name FROM sqlite_master WHERE type='table' AND name='users'");
+       if (checkTable.next()) {
+           qDebug() << "Таблица 'users' найдена";
+       } else {
+           qDebug() << "Таблица 'users' НЕ найдена!";
+           QMessageBox::critical(this, "Ошибка", "Таблица пользователей не найдена в базе данных.");
+           return;
+       }
+
+       // Проверим структуру таблицы
+       QSqlQuery pragmaQuery("PRAGMA table_info(users)");
+       qDebug() << "Структура таблицы users:";
+       while (pragmaQuery.next()) {
+           qDebug() << "  Колонка" << pragmaQuery.value(0).toInt()
+                    << ":" << pragmaQuery.value(1).toString()
+                    << "(" << pragmaQuery.value(2).toString() << ")";
+       }
+//
     QSqlQuery q;
     q.prepare("SELECT full_name, role FROM users WHERE login = :l AND password = :p");
     q.bindValue(":l", login);

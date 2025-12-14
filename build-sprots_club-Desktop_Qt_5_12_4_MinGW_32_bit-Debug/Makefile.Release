@@ -1223,7 +1223,10 @@ release/main.o: ../sprots_club/main.cpp ../sprots_club/mainwindow.h \
 		C:/Qt/Qt5.12.4/5.12.4/mingw73_32/include/QtWidgets/qapplication.h \
 		C:/Qt/Qt5.12.4/5.12.4/mingw73_32/include/QtWidgets/qdesktopwidget.h \
 		C:/Qt/Qt5.12.4/5.12.4/mingw73_32/include/QtGui/qguiapplication.h \
-		C:/Qt/Qt5.12.4/5.12.4/mingw73_32/include/QtGui/qinputmethod.h
+		C:/Qt/Qt5.12.4/5.12.4/mingw73_32/include/QtGui/qinputmethod.h \
+		C:/Qt/Qt5.12.4/5.12.4/mingw73_32/include/QtWidgets/QMessageBox \
+		C:/Qt/Qt5.12.4/5.12.4/mingw73_32/include/QtWidgets/qmessagebox.h \
+		C:/Qt/Qt5.12.4/5.12.4/mingw73_32/include/QtCore/QDir
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o release/main.o ../sprots_club/main.cpp
 
 release/mainwindow.o: ../sprots_club/mainwindow.cpp ../sprots_club/mainwindow.h \
