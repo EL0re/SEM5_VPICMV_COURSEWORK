@@ -61,6 +61,14 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void MainWindow::on_addButton_clicked()
+{
+    if(ui->label->text() == "attendance")
+    {
+        //проверка, т к будет всплывающее окно
+    }
+}
+
 void MainWindow::on_pushButton_clicked()
 {
     ui->label->setText("Группы");
@@ -111,6 +119,23 @@ void MainWindow::on_pushButton_4_clicked()
 
 void MainWindow::set_table(const QString &table)
 {
+    if (table == "users")
+    {
+
+    }
+    else if (table == "groups")
+    {
+
+    }
+    else if (table == "schedule")
+    {
+
+    }
+    else if (table == "attendance")
+    {
+
+    }
+
     model = new QSqlTableModel(this, QSqlDatabase::database());
     model->setTable(table);
     model->select();

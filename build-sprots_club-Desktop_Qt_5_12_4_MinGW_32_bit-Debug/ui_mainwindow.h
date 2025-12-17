@@ -41,6 +41,8 @@ public:
     QLineEdit *lineEdit_3;
     QLabel *labelSearch;
     QLabel *labelFilters;
+    QPushButton *addButton;
+    QPushButton *delButton;
 
     void setupUi(QMainWindow *MainWindow)
     {
@@ -114,6 +116,19 @@ public:
         labelFilters->setObjectName(QString::fromUtf8("labelFilters"));
         labelFilters->setGeometry(QRect(670, 50, 101, 41));
         labelFilters->setFont(font1);
+        addButton = new QPushButton(centralWidget);
+        addButton->setObjectName(QString::fromUtf8("addButton"));
+        addButton->setGeometry(QRect(1110, 90, 31, 31));
+        addButton->setFont(font1);
+        delButton = new QPushButton(centralWidget);
+        delButton->setObjectName(QString::fromUtf8("delButton"));
+        delButton->setGeometry(QRect(1150, 90, 51, 31));
+        QFont font2;
+        font2.setPointSize(9);
+        font2.setBold(true);
+        font2.setWeight(75);
+        delButton->setFont(font2);
+        delButton->setAutoFillBackground(false);
         MainWindow->setCentralWidget(centralWidget);
 
         retranslateUi(MainWindow);
@@ -135,6 +150,8 @@ public:
         FIO_Label->setText(QString());
         labelSearch->setText(QApplication::translate("MainWindow", "\320\237\320\276\320\270\321\201\320\272:", nullptr));
         labelFilters->setText(QApplication::translate("MainWindow", "\320\244\320\270\320\273\321\214\321\202\321\200\321\213:", nullptr));
+        addButton->setText(QApplication::translate("MainWindow", "+", nullptr));
+        delButton->setText(QApplication::translate("MainWindow", "del", nullptr));
     } // retranslateUi
 
 };
