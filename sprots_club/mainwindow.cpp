@@ -6,6 +6,7 @@ MainWindow::MainWindow(const QString &fullName, QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    ui->label->setText("Пользователи");
     ui->tableView->setSortingEnabled(true);
     ui->tableView->installEventFilter(this);
     QPixmap pixmap("C:/Users/XE4/Desktop/xui.png");
@@ -15,14 +16,18 @@ MainWindow::MainWindow(const QString &fullName, QWidget *parent) :
                                           Qt::KeepAspectRatio));
     ui->FIO_Label->setText(fullName);
 
+
     model = new QSqlTableModel(this, QSqlDatabase::database());
     model->setTable("users");
     model->select();
+
     model->setEditStrategy(QSqlTableModel::OnManualSubmit);
-    connect(model, &QSqlTableModel::dataChanged,
-                this, &MainWindow::onModelDataChanged);
+    connect(model, &QSqlTableModel::dataChanged, this, &MainWindow::onModelDataChanged);
+
     proxyModel = new QSortFilterProxyModel(this);
     proxyModel->setSourceModel(model);
+
+
     proxyModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
     reloadview();
     ui->tableView->setModel(proxyModel);
@@ -36,6 +41,7 @@ MainWindow::MainWindow(const QString &fullName, QWidget *parent) :
             this, &MainWindow::onModelDataChanged);
 
     proxyModel->setSourceModel(model);
+
 
     int fullNameCol = model->fieldIndex("full_name");
     if (fullNameCol >= 0) {
@@ -57,13 +63,8 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_pushButton_clicked()
 {
-    model = new QSqlTableModel(this, QSqlDatabase::database());
-    model->setTable("groups");
-    model->select();
-    model->setEditStrategy(QSqlTableModel::OnManualSubmit);
-    connect(model, &QSqlTableModel::dataChanged,
-            this, &MainWindow::onModelDataChanged);
-    proxyModel->setSourceModel(model);
+    ui->label->setText("Группы");
+    set_table("groups");
     int fullNameCol = model->fieldIndex("full_name");
         if (fullNameCol >= 0) {
             proxyModel->setFilterKeyColumn(fullNameCol);
@@ -77,26 +78,45 @@ void MainWindow::on_pushButton_clicked()
 
 void MainWindow::on_pushButton_2_clicked()
 {
-    model = new QSqlTableModel(this, QSqlDatabase::database());
-    model->setTable("users");
-    model->select();
-    model->setEditStrategy(QSqlTableModel::OnManualSubmit);
-    connect(model, &QSqlTableModel::dataChanged,
-            this, &MainWindow::onModelDataChanged);
-
-    proxyModel->setSourceModel(model);
+    ui->label->setText("Пользователи");
+    set_table("users");
 
     int fullNameCol = model->fieldIndex("full_name");
-    if (fullNameCol >= 0) {
+    if (fullNameCol >= 0)
+    {
         proxyModel->setFilterKeyColumn(fullNameCol);
         ui->searchLineEdit->setEnabled(true);
-    } else {
+    }
+    else
+    {
         proxyModel->setFilterKeyColumn(-1);
         ui->searchLineEdit->setEnabled(false);
     }
 
     reloadview();
     ui->tableView->hideColumn(0);
+}
+
+void MainWindow::on_pushButton_3_clicked()
+{
+    ui->label->setText("Расписание");
+    set_table("schedule");
+}
+
+void MainWindow::on_pushButton_4_clicked()
+{
+    ui->label->setText("Посещаемость");
+    set_table("attendance");
+}
+
+void MainWindow::set_table(const QString &table)
+{
+    model = new QSqlTableModel(this, QSqlDatabase::database());
+    model->setTable(table);
+    model->select();
+    model->setEditStrategy(QSqlTableModel::OnManualSubmit);
+    connect(model, &QSqlTableModel::dataChanged, this, &MainWindow::onModelDataChanged);
+    proxyModel->setSourceModel(model);
 }
 
 void MainWindow::on_logoutButton_clicked()

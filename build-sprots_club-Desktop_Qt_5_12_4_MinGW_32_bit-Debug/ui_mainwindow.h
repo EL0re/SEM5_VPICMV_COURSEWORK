@@ -47,7 +47,7 @@ public:
         centralWidget->setObjectName(QString::fromUtf8("centralWidget"));
         tableView = new QTableView(centralWidget);
         tableView->setObjectName(QString::fromUtf8("tableView"));
-        tableView->setGeometry(QRect(170, 115, 1031, 680));
+        tableView->setGeometry(QRect(170, 114, 1011, 681));
         pushButton = new QPushButton(centralWidget);
         pushButton->setObjectName(QString::fromUtf8("pushButton"));
         pushButton->setGeometry(QRect(10, 180, 150, 40));
@@ -56,7 +56,7 @@ public:
         pushButton_2->setGeometry(QRect(10, 120, 150, 40));
         searchLineEdit = new QLineEdit(centralWidget);
         searchLineEdit->setObjectName(QString::fromUtf8("searchLineEdit"));
-        searchLineEdit->setGeometry(QRect(170, 70, 280, 40));
+        searchLineEdit->setGeometry(QRect(170, 70, 271, 40));
         searchLineEdit->setPlaceholderText(QString::fromUtf8(""));
         logoutButton = new QPushButton(centralWidget);
         logoutButton->setObjectName(QString::fromUtf8("logoutButton"));
@@ -75,7 +75,7 @@ public:
         label->setAlignment(Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter);
         lineEdit = new QLineEdit(centralWidget);
         lineEdit->setObjectName(QString::fromUtf8("lineEdit"));
-        lineEdit->setGeometry(QRect(460, 70, 280, 40));
+        lineEdit->setGeometry(QRect(450, 70, 271, 40));
         pushButton_3 = new QPushButton(centralWidget);
         pushButton_3->setObjectName(QString::fromUtf8("pushButton_3"));
         pushButton_3->setGeometry(QRect(10, 240, 150, 40));

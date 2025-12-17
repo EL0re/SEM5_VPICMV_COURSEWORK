@@ -32,6 +32,8 @@ private slots:
     void on_searchLineEdit_textChanged(const QString &text);
     void on_pushButton_clicked();
     void on_pushButton_2_clicked();
+    void on_pushButton_3_clicked();
+    void on_pushButton_4_clicked();
     void on_logoutButton_clicked();
 
     void onModelDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight);
@@ -44,6 +46,7 @@ private:
     bool isRowFilled(int row) const;
     void reloadview();
     void commitLastRow();
+    void set_table(const QString &table);
 };
 
 #endif // MAINWINDOW_H
