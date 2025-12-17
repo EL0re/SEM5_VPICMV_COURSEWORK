@@ -38,7 +38,7 @@
     <string>ВОЙТИ</string>
    </property>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -121,9 +121,13 @@
         <height>35</height>
        </size>
       </property>
+      <property name="echoMode">
+       <enum>QLineEdit::Password</enum>
+      </property>
      </widget>
     </item>
    </layout>
+   <zorder>pass_label</zorder>
    <zorder>passEdit</zorder>
    <zorder>loginEdit</zorder>
    <zorder>login_label</zorder>

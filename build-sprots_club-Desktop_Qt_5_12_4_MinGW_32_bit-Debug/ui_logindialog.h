@@ -23,7 +23,7 @@ class Ui_logindialog
 {
 public:
     QPushButton *loginBtn;
-    QWidget *widget;
+    QWidget *layoutWidget;
     QVBoxLayout *verticalLayout_3;
     QLabel *login_label;
     QLineEdit *loginEdit;
@@ -40,13 +40,13 @@ public:
         loginBtn->setGeometry(QRect(90, 440, 200, 40));
         loginBtn->setMinimumSize(QSize(100, 30));
         loginBtn->setMaximumSize(QSize(200, 40));
-        widget = new QWidget(logindialog);
-        widget->setObjectName(QString::fromUtf8("widget"));
-        widget->setGeometry(QRect(10, 12, 361, 391));
-        verticalLayout_3 = new QVBoxLayout(widget);
+        layoutWidget = new QWidget(logindialog);
+        layoutWidget->setObjectName(QString::fromUtf8("layoutWidget"));
+        layoutWidget->setGeometry(QRect(10, 12, 361, 391));
+        verticalLayout_3 = new QVBoxLayout(layoutWidget);
         verticalLayout_3->setObjectName(QString::fromUtf8("verticalLayout_3"));
         verticalLayout_3->setContentsMargins(0, 0, 0, 0);
-        login_label = new QLabel(widget);
+        login_label = new QLabel(layoutWidget);
         login_label->setObjectName(QString::fromUtf8("login_label"));
         login_label->setMaximumSize(QSize(359, 100));
         QFont font;
@@ -59,13 +59,13 @@ public:
 
         verticalLayout_3->addWidget(login_label);
 
-        loginEdit = new QLineEdit(widget);
+        loginEdit = new QLineEdit(layoutWidget);
         loginEdit->setObjectName(QString::fromUtf8("loginEdit"));
         loginEdit->setMinimumSize(QSize(230, 35));
 
         verticalLayout_3->addWidget(loginEdit, 0, Qt::AlignHCenter);
 
-        pass_label = new QLabel(widget);
+        pass_label = new QLabel(layoutWidget);
         pass_label->setObjectName(QString::fromUtf8("pass_label"));
         pass_label->setMinimumSize(QSize(100, 100));
         pass_label->setMaximumSize(QSize(359, 100));
@@ -74,12 +74,14 @@ public:
 
         verticalLayout_3->addWidget(pass_label);
 
-        passEdit = new QLineEdit(widget);
+        passEdit = new QLineEdit(layoutWidget);
         passEdit->setObjectName(QString::fromUtf8("passEdit"));
         passEdit->setMinimumSize(QSize(230, 35));
+        passEdit->setEchoMode(QLineEdit::Password);
 
         verticalLayout_3->addWidget(passEdit, 0, Qt::AlignHCenter);
 
+        pass_label->raise();
         passEdit->raise();
         loginEdit->raise();
         login_label->raise();
