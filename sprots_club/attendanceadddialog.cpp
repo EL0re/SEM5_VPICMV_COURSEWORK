@@ -4,7 +4,7 @@
 AttendanceAddDialog::AttendanceAddDialog(QWidget *parent) : QDialog(parent) {
     setWindowTitle("Добавление записей посещаемости");
     setModal(true);
-    setMinimumSize(700, 500); // Увеличенный размер окна
+    setMinimumSize(700, 350); // Увеличенный размер окна
 
     // Основной вертикальный слой
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
@@ -24,8 +24,22 @@ AttendanceAddDialog::AttendanceAddDialog(QWidget *parent) : QDialog(parent) {
 
     groupLineEdit = new QLineEdit(this);
     groupLineEdit->setPlaceholderText("Введите название...");
-    groupLineEdit->setMinimumHeight(35);
-    groupLineEdit->setStyleSheet("QLineEdit { font-size: 14px; }");
+    groupLineEdit->setMinimumHeight(40); // Немного увеличим высоту для удобства
+
+    groupLineEdit->setStyleSheet(
+        "QLineEdit {"
+        "    background-color: #f0f0f0;"
+        "    border: 1px solid #d1d1d1;"
+        "    border-radius: 12px;"
+        "    padding: 6px 12px;"
+        "    color: #333333;"
+        "    font-size: 14px;"
+        "}"
+        "QLineEdit:focus {"
+        "    background-color: #ffffff;"
+        "    border: 1px solid #a0a0a0;"
+        "}"
+    );
 
     groupLayout->addWidget(groupLabel);
     groupLayout->addWidget(groupLineEdit);
