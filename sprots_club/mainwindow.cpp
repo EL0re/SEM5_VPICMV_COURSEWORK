@@ -3,6 +3,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <QMap>
+#include <QDebug>
 
 MainWindow::MainWindow(const QString &fullName, QWidget *parent) :
     QMainWindow(parent),
@@ -39,18 +40,54 @@ void MainWindow::updateUI(bool s1, bool s2, bool f1, bool f2, const QString &ps1
 
 void MainWindow::switchToTable(const QString &tableName, const QString &title) {
     currentTable = tableName;
-    // Удаляем упоминание currentSearchField и ui->searchLineEdit,
-    // так как теперь у нас searchLineEdit1 и 2
-
     ui->label->setText(title);
-    tableManager->setupTable(tableName, ui->tableView);
 
-    // Переподключаем сигнал изменений для новой модели
-    connect(tableManager->getModel(), &QSqlTableModel::dataChanged,
-            this, &MainWindow::onModelDataChanged);
+    tableManager->setupTable(tableName, ui->tableView);
+    auto model = tableManager->getModel();
+
+    // Сбрасываем делегаты для 4-й колонки (чтобы они не накладывались)
+    ui->tableView->setItemDelegateForColumn(4, nullptr);
+
+    if (tableName == "users") {
+        model->setHeaderData(1, Qt::Horizontal, "Логин");
+        model->setHeaderData(2, Qt::Horizontal, "Пароль");
+        model->setHeaderData(3, Qt::Horizontal, "ФИО");
+        model->setHeaderData(4, Qt::Horizontal, "Роль");
+    }
+    else if (tableName == "groups") {
+        model->setHeaderData(1, Qt::Horizontal, "Название группы");
+        model->setHeaderData(2, Qt::Horizontal, "Направление");
+        model->setHeaderData(3, Qt::Horizontal, "Тренер");
+        model->setHeaderData(4, Qt::Horizontal, "Доб. учеников");
+
+        ButtonDelegate *btnDel = new ButtonDelegate(this);
+        ui->tableView->setItemDelegateForColumn(4, btnDel);
+
+        // Пример обработки нажатия
+        connect(btnDel, &ButtonDelegate::buttonClicked, this, [this](int row){
+            qDebug() << "Нажата кнопка в строке:" << row;
+        });
+    }
+    else if (tableName == "schedule") {
+        model->setHeaderData(1, Qt::Horizontal, "Название группы");
+        model->setHeaderData(2, Qt::Horizontal, "День недели");
+        model->setHeaderData(3, Qt::Horizontal, "Вр. начала");
+        model->setHeaderData(4, Qt::Horizontal, "Вр. окончания");
+        model->setHeaderData(5, Qt::Horizontal, "Зал");
+    }
+    else if (tableName == "attendance") {
+        model->setHeaderData(1, Qt::Horizontal, "ФИО");
+        model->setHeaderData(2, Qt::Horizontal, "Название группы");
+        model->setHeaderData(3, Qt::Horizontal, "Дата занятия");
+        model->setHeaderData(4, Qt::Horizontal, "Статус");
+
+        ui->tableView->setItemDelegateForColumn(4, new CheckBoxDelegate(this));
+    }
+
+    // Скрываем колонку ID (она всегда 0-я во всех таблицах)
+    ui->tableView->hideColumn(0);
 
     reloadview();
-    ui->tableView->hideColumn(0); // Скрываем ID
 }
 
 void MainWindow::on_pushButton_2_clicked() { // ПОЛЬЗОВАТЕЛИ
