@@ -21,8 +21,8 @@ QT_BEGIN_MOC_NAMESPACE
 QT_WARNING_PUSH
 QT_WARNING_DISABLE_DEPRECATED
 struct qt_meta_stringdata_MainWindow_t {
-    QByteArrayData data[14];
-    char stringdata0[237];
+    QByteArrayData data[13];
+    char stringdata0[228];
 };
 #define QT_MOC_LITERAL(idx, ofs, len) \
     Q_STATIC_BYTE_ARRAY_DATA_HEADER_INITIALIZER_WITH_OFFSET(len, \
@@ -32,27 +32,26 @@ struct qt_meta_stringdata_MainWindow_t {
 static const qt_meta_stringdata_MainWindow_t qt_meta_stringdata_MainWindow = {
     {
 QT_MOC_LITERAL(0, 0, 10), // "MainWindow"
-QT_MOC_LITERAL(1, 11, 29), // "on_searchLineEdit_textChanged"
-QT_MOC_LITERAL(2, 41, 0), // ""
-QT_MOC_LITERAL(3, 42, 4), // "text"
-QT_MOC_LITERAL(4, 47, 21), // "on_pushButton_clicked"
-QT_MOC_LITERAL(5, 69, 23), // "on_pushButton_2_clicked"
-QT_MOC_LITERAL(6, 93, 23), // "on_pushButton_3_clicked"
-QT_MOC_LITERAL(7, 117, 23), // "on_pushButton_4_clicked"
-QT_MOC_LITERAL(8, 141, 23), // "on_logoutButton_clicked"
-QT_MOC_LITERAL(9, 165, 20), // "on_addButton_clicked"
-QT_MOC_LITERAL(10, 186, 18), // "onModelDataChanged"
-QT_MOC_LITERAL(11, 205, 11), // "QModelIndex"
-QT_MOC_LITERAL(12, 217, 7), // "topLeft"
-QT_MOC_LITERAL(13, 225, 11) // "bottomRight"
+QT_MOC_LITERAL(1, 11, 21), // "on_pushButton_clicked"
+QT_MOC_LITERAL(2, 33, 0), // ""
+QT_MOC_LITERAL(3, 34, 23), // "on_pushButton_2_clicked"
+QT_MOC_LITERAL(4, 58, 23), // "on_pushButton_3_clicked"
+QT_MOC_LITERAL(5, 82, 23), // "on_pushButton_4_clicked"
+QT_MOC_LITERAL(6, 106, 23), // "on_logoutButton_clicked"
+QT_MOC_LITERAL(7, 130, 20), // "on_addButton_clicked"
+QT_MOC_LITERAL(8, 151, 25), // "on_anySearchField_changed"
+QT_MOC_LITERAL(9, 177, 18), // "onModelDataChanged"
+QT_MOC_LITERAL(10, 196, 11), // "QModelIndex"
+QT_MOC_LITERAL(11, 208, 7), // "topLeft"
+QT_MOC_LITERAL(12, 216, 11) // "bottomRight"
 
     },
-    "MainWindow\0on_searchLineEdit_textChanged\0"
-    "\0text\0on_pushButton_clicked\0"
+    "MainWindow\0on_pushButton_clicked\0\0"
     "on_pushButton_2_clicked\0on_pushButton_3_clicked\0"
     "on_pushButton_4_clicked\0on_logoutButton_clicked\0"
-    "on_addButton_clicked\0onModelDataChanged\0"
-    "QModelIndex\0topLeft\0bottomRight"
+    "on_addButton_clicked\0on_anySearchField_changed\0"
+    "onModelDataChanged\0QModelIndex\0topLeft\0"
+    "bottomRight"
 };
 #undef QT_MOC_LITERAL
 
@@ -70,24 +69,24 @@ static const uint qt_meta_data_MainWindow[] = {
        0,       // signalCount
 
  // slots: name, argc, parameters, tag, flags
-       1,    1,   54,    2, 0x08 /* Private */,
-       4,    0,   57,    2, 0x08 /* Private */,
-       5,    0,   58,    2, 0x08 /* Private */,
-       6,    0,   59,    2, 0x08 /* Private */,
-       7,    0,   60,    2, 0x08 /* Private */,
-       8,    0,   61,    2, 0x08 /* Private */,
-       9,    0,   62,    2, 0x08 /* Private */,
-      10,    2,   63,    2, 0x08 /* Private */,
+       1,    0,   54,    2, 0x08 /* Private */,
+       3,    0,   55,    2, 0x08 /* Private */,
+       4,    0,   56,    2, 0x08 /* Private */,
+       5,    0,   57,    2, 0x08 /* Private */,
+       6,    0,   58,    2, 0x08 /* Private */,
+       7,    0,   59,    2, 0x08 /* Private */,
+       8,    0,   60,    2, 0x08 /* Private */,
+       9,    2,   61,    2, 0x08 /* Private */,
 
  // slots: parameters
-    QMetaType::Void, QMetaType::QString,    3,
     QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void,
-    QMetaType::Void, 0x80000000 | 11, 0x80000000 | 11,   12,   13,
+    QMetaType::Void,
+    QMetaType::Void, 0x80000000 | 10, 0x80000000 | 10,   11,   12,
 
        0        // eod
 };
@@ -98,13 +97,13 @@ void MainWindow::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
         auto *_t = static_cast<MainWindow *>(_o);
         Q_UNUSED(_t)
         switch (_id) {
-        case 0: _t->on_searchLineEdit_textChanged((*reinterpret_cast< const QString(*)>(_a[1]))); break;
-        case 1: _t->on_pushButton_clicked(); break;
-        case 2: _t->on_pushButton_2_clicked(); break;
-        case 3: _t->on_pushButton_3_clicked(); break;
-        case 4: _t->on_pushButton_4_clicked(); break;
-        case 5: _t->on_logoutButton_clicked(); break;
-        case 6: _t->on_addButton_clicked(); break;
+        case 0: _t->on_pushButton_clicked(); break;
+        case 1: _t->on_pushButton_2_clicked(); break;
+        case 2: _t->on_pushButton_3_clicked(); break;
+        case 3: _t->on_pushButton_4_clicked(); break;
+        case 4: _t->on_logoutButton_clicked(); break;
+        case 5: _t->on_addButton_clicked(); break;
+        case 6: _t->on_anySearchField_changed(); break;
         case 7: _t->onModelDataChanged((*reinterpret_cast< const QModelIndex(*)>(_a[1])),(*reinterpret_cast< const QModelIndex(*)>(_a[2]))); break;
         default: ;
         }

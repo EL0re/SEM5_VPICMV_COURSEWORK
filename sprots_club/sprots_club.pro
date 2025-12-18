@@ -27,11 +27,13 @@ CONFIG += c++11
 SOURCES += \
         logindialog.cpp \
         main.cpp \
-        mainwindow.cpp
+        mainwindow.cpp \
+        tablemanager.cpp
 
 HEADERS += \
         logindialog.h \
-        mainwindow.h
+        mainwindow.h \
+        tablemanager.h
 
 FORMS += \
         logindialog.ui \

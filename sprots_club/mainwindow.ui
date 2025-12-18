@@ -50,7 +50,7 @@
      <string>ПОЛЬЗОВАТЕЛИ</string>
     </property>
    </widget>
-   <widget class="QLineEdit" name="searchLineEdit">
+   <widget class="QLineEdit" name="searchLineEdit1">
     <property name="geometry">
      <rect>
       <x>170</x>
@@ -118,7 +118,7 @@
      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
     </property>
    </widget>
-   <widget class="QLineEdit" name="lineEdit">
+   <widget class="QLineEdit" name="searchLineEdit2">
     <property name="geometry">
      <rect>
       <x>370</x>
@@ -190,7 +190,7 @@
      <string/>
     </property>
    </widget>
-   <widget class="QLineEdit" name="lineEdit_2">
+   <widget class="QLineEdit" name="filterLineEdit1">
     <property name="geometry">
      <rect>
       <x>670</x>
@@ -200,7 +200,7 @@
      </rect>
     </property>
    </widget>
-   <widget class="QLineEdit" name="lineEdit_3">
+   <widget class="QLineEdit" name="filterLineEdit2">
     <property name="geometry">
      <rect>
       <x>870</x>
