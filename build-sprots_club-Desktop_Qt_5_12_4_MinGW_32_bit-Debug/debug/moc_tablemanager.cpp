@@ -270,5 +270,75 @@ int CheckBoxDelegate::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     _id = QStyledItemDelegate::qt_metacall(_c, _id, _a);
     return _id;
 }
+struct qt_meta_stringdata_RelationComboBoxDelegate_t {
+    QByteArrayData data[1];
+    char stringdata0[25];
+};
+#define QT_MOC_LITERAL(idx, ofs, len) \
+    Q_STATIC_BYTE_ARRAY_DATA_HEADER_INITIALIZER_WITH_OFFSET(len, \
+    qptrdiff(offsetof(qt_meta_stringdata_RelationComboBoxDelegate_t, stringdata0) + ofs \
+        - idx * sizeof(QByteArrayData)) \
+    )
+static const qt_meta_stringdata_RelationComboBoxDelegate_t qt_meta_stringdata_RelationComboBoxDelegate = {
+    {
+QT_MOC_LITERAL(0, 0, 24) // "RelationComboBoxDelegate"
+
+    },
+    "RelationComboBoxDelegate"
+};
+#undef QT_MOC_LITERAL
+
+static const uint qt_meta_data_RelationComboBoxDelegate[] = {
+
+ // content:
+       8,       // revision
+       0,       // classname
+       0,    0, // classinfo
+       0,    0, // methods
+       0,    0, // properties
+       0,    0, // enums/sets
+       0,    0, // constructors
+       0,       // flags
+       0,       // signalCount
+
+       0        // eod
+};
+
+void RelationComboBoxDelegate::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
+{
+    Q_UNUSED(_o);
+    Q_UNUSED(_id);
+    Q_UNUSED(_c);
+    Q_UNUSED(_a);
+}
+
+QT_INIT_METAOBJECT const QMetaObject RelationComboBoxDelegate::staticMetaObject = { {
+    &QItemDelegate::staticMetaObject,
+    qt_meta_stringdata_RelationComboBoxDelegate.data,
+    qt_meta_data_RelationComboBoxDelegate,
+    qt_static_metacall,
+    nullptr,
+    nullptr
+} };
+
+
+const QMetaObject *RelationComboBoxDelegate::metaObject() const
+{
+    return QObject::d_ptr->metaObject ? QObject::d_ptr->dynamicMetaObject() : &staticMetaObject;
+}
+
+void *RelationComboBoxDelegate::qt_metacast(const char *_clname)
+{
+    if (!_clname) return nullptr;
+    if (!strcmp(_clname, qt_meta_stringdata_RelationComboBoxDelegate.stringdata0))
+        return static_cast<void*>(this);
+    return QItemDelegate::qt_metacast(_clname);
+}
+
+int RelationComboBoxDelegate::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
+{
+    _id = QItemDelegate::qt_metacall(_c, _id, _a);
+    return _id;
+}
 QT_WARNING_POP
 QT_END_MOC_NAMESPACE

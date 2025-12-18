@@ -19,35 +19,42 @@ void TableManager::setupTable(const QString &tableName, QTableView *view) {
     model = new QSqlRelationalTableModel(this, QSqlDatabase::database());
     model->setTable(tableName);
 
-    // 1. Устанавливаем связи
-    if (tableName == "schedule") {
-        model->setRelation(1, QSqlRelation("groups", "id", "name"));
-    }
-    else if (tableName == "attendance") {
+    // Настройка связей
+    if (tableName == "groups") {
+        // Связываем 3-й столбец (тренер) с таблицей users (поле id), отображаем full_name
+        model->setRelation(3, QSqlRelation("users", "id", "full_name"));
+        QSqlTableModel *relModel = model->relationModel(3);
+        if (relModel) {
+            relModel->setFilter("role = 'trainer'");
+            relModel->select();
+        }
+    } else if (tableName == "attendance") {
         model->setRelation(1, QSqlRelation("users", "id", "full_name"));
         model->setRelation(2, QSqlRelation("groups", "id", "name"));
     }
-    else if (tableName == "groups") {
-        model->setRelation(3, QSqlRelation("users", "id", "full_name"));
-    }
 
+    // Оставляем стратегию ManualSubmit для контроля заполнения
     model->setEditStrategy(QSqlTableModel::OnManualSubmit);
-
-    // 2. Сначала выполняем SELECT, чтобы получить данные и структуру из БД
     model->select();
 
-    // 3. ТОЛЬКО ПОСЛЕ select() добавляем виртуальную колонку
     if (tableName == "groups") {
-        model->insertColumn(4); // Теперь она не исчезнет до следующего select()
+        model->insertColumn(4);
     }
 
     proxyModel = new QSortFilterProxyModel(this);
     proxyModel->setSourceModel(model);
+
     view->setModel(proxyModel);
 
-    // Стандартный делегат для комбобоксов (выбор тренера/группы из списка)
+    // ВОТ ЭТА СТРОКА РЕШАЕТ ПРОБЛЕМУ ОЧИСТКИ:
+    // Она создает ComboBox, и пользователь просто выбирает тренера из существующих
     view->setItemDelegate(new QSqlRelationalDelegate(view));
+
+    // Чтобы список открывался удобнее
+    view->setEditTriggers(QAbstractItemView::DoubleClicked | QAbstractItemView::SelectedClicked);
 }
+
+
 void CheckBoxDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
     QString status = index.data().toString();
     QStyleOptionButton checkBoxOption;
@@ -83,23 +90,17 @@ bool ButtonDelegate::editorEvent(QEvent *event, QAbstractItemModel *model, const
     return false;
 }
 
-void TableManager::applyMultiFilter(const QMap<QString, QString> &filters) {
-    if (!model) return;
+void TableManager::applyMultiFilter(const QMap<int, QString> &columnFilters) {
+    if (!proxyModel) return;
 
-    QStringList filterConditions;
-    QMapIterator<QString, QString> i(filters);
-
+    QMapIterator<int, QString> i(columnFilters);
     while (i.hasNext()) {
         i.next();
-        QString column = i.key();
-        QString value = i.value().trimmed();
-
-        if (!value.isEmpty()) {
-            // Используем LIKE для частичного совпадения (поиск и фильтр)
-            filterConditions << QString("%1 LIKE '%%2%'").arg(column).arg(value);
+        if (!i.value().isEmpty()) {
+            proxyModel->setFilterKeyColumn(i.key());
+            proxyModel->setFilterFixedString(i.value());
+            return;
         }
     }
-
-    model->setFilter(filterConditions.join(" AND "));
-    model->select();
+    proxyModel->setFilterFixedString("");
 }

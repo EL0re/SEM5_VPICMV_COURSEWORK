@@ -41,7 +41,8 @@ private:
     QString currentTable;
     QString currentSearchField;
 
-
+    void setupGroupDelegates();
+    int getUserIdByName(const QString &fullName);
     void switchToTable(const QString &tableName, const QString &title);
     void ensureTrailingEmptyRow();
     bool isRowFilled(int row) const;
