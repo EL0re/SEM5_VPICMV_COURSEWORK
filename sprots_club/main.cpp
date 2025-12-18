@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
         w.show();
         int result = a.exec();
 
-        if (w.logoutRequested || result != 0)
+        if (!w.logoutRequested)
         {
             return result;
         }
