@@ -7,6 +7,7 @@
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QMessageBox>
+#include "attendanceadddialog.h"
 
 MainWindow::MainWindow(const QString &fullName, QWidget *parent) :
     QMainWindow(parent),
@@ -105,6 +106,19 @@ void MainWindow::switchToTable(const QString &tableName, const QString &title) {
         });
     }
     else if (tableName == "schedule") {
+        for(int i=1; i<=5; ++i) ui->tableView->setItemDelegateForColumn(i, nullptr);
+
+            // 2. Колонка 1: Группа (используем наш Relation делегат, чтобы был список имен вместо ID)
+        ui->tableView->setItemDelegateForColumn(1, new RelationComboBoxDelegate("groups", "name", "", this));
+
+            // 3. Колонка 2: День недели
+        QStringList days = {"Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"};
+        ui->tableView->setItemDelegateForColumn(2, new FixedListDelegate(days, this));
+
+            // 4. Колонка 3 и 4: Время начала и окончания
+        ui->tableView->setItemDelegateForColumn(3, new TimeEditDelegate(this));
+        ui->tableView->setItemDelegateForColumn(4, new TimeEditDelegate(this));
+
         model->setHeaderData(1, Qt::Horizontal, "Название группы");
         model->setHeaderData(2, Qt::Horizontal, "День недели");
         model->setHeaderData(3, Qt::Horizontal, "Вр. начала");
@@ -151,32 +165,42 @@ void MainWindow::on_pushButton_4_clicked() { // ПОСЕЩАЕМОСТЬ
 
 void MainWindow::on_addButton_clicked() {
     if (currentTable == "attendance") {
-        qDebug() << "Открытие окна посещаемости...";
-        return;
+            // Создаем объект вашего нового класса
+        AttendanceAddDialog dialog(this);
+
+            // exec() открывает окно как модальное и блокирует основное окно
+        if (dialog.exec() == QDialog::Accepted) {
+                // Сюда попадем, если в диалоге нажали "Сохранить" (accept)
+            qDebug() << "Записи успешно сформированы (логика будет позже)";
+            reloadview();
+        }
     }
+    else
+    {
+        auto model = tableManager->getModel();
+        if (!model) return;
 
-    auto model = tableManager->getModel();
-    if (!model) return;
+            // Временно отключаем сортировку, чтобы строка не прыгала
+        ui->tableView->setSortingEnabled(false);
 
-    // Временно отключаем сортировку, чтобы строка не прыгала
-    ui->tableView->setSortingEnabled(false);
-
-    if (model->insertRow(0)) {
-        // ПРЕДЗАПОЛНЕНИЕ: Если это таблица пользователей, ставим роль по умолчанию,
-        // чтобы избежать ошибки CHECK constraint сразу при создании.
+        if (model->insertRow(0)) {
+                // ПРЕДЗАПОЛНЕНИЕ: Если это таблица пользователей, ставим роль по умолчанию,
+                // чтобы избежать ошибки CHECK constraint сразу при создании.
         if (currentTable == "users") {
             model->setData(model->index(0, 4), "student");
         }
 
-        // Вычисляем индекс в прокси-модели
+                // Вычисляем индекс в прокси-модели
         QModelIndex proxyIndex = tableManager->getProxyModel()->mapFromSource(model->index(0, 1));
 
         ui->tableView->scrollToTop();
         ui->tableView->setCurrentIndex(proxyIndex);
         ui->tableView->edit(proxyIndex); // Сразу открываем поле для ввода
+        }
+
+        ui->tableView->setSortingEnabled(true);
     }
 
-    ui->tableView->setSortingEnabled(true);
 }
 
 void MainWindow::on_logoutButton_clicked()
@@ -218,39 +242,77 @@ void MainWindow::onModelDataChanged(const QModelIndex &topLeft, const QModelInde
     if (!model || !model->isDirty()) return;
 
     int row = topLeft.row();
+    int col = topLeft.column();
 
-    // Проверка заполненности (Название, Направление, Тренер)
+    // Блокируем сигналы, чтобы наши манипуляции не вызывали рекурсию
+    model->blockSignals(true);
+
+    // Обработка Тренера в Группах
+    if (currentTable == "groups" && col == 3) {
+        QString val = model->index(row, 3).data(Qt::DisplayRole).toString();
+        bool isNumeric;
+        val.toInt(&isNumeric);
+        if (!isNumeric) { // Если в ячейке текст, а не ID
+            QSqlQuery query;
+            query.prepare("SELECT id FROM users WHERE full_name = :name AND role = 'trainer'");
+            query.bindValue(":name", val);
+            if (query.exec() && query.next()) {
+                model->setData(model->index(row, 3), query.value(0).toInt(), Qt::EditRole);
+            }
+        }
+    }
+    // Обработка Группы в Расписании
+    else if (currentTable == "schedule" && col == 1) {
+        QString val = model->index(row, 1).data(Qt::DisplayRole).toString();
+        bool isNumeric;
+        val.toInt(&isNumeric);
+        if (!isNumeric) {
+            QSqlQuery query;
+            query.prepare("SELECT id FROM groups WHERE name = :name");
+            query.bindValue(":name", val);
+            if (query.exec() && query.next()) {
+                model->setData(model->index(row, 1), query.value(0).toInt(), Qt::EditRole);
+            }
+        }
+    }
+
+    model->blockSignals(false);
+
+    // Определение лимита для сохранения
+    int lastRequiredCol = 3;
+    if (currentTable == "schedule") lastRequiredCol = 5;
+
     bool allFilled = true;
-    for (int col = 1; col <= 3; ++col) {
-        // Проверяем значение в модели
-        QVariant val = model->index(row, col).data();
-        if (val.toString().trimmed().isEmpty() || val.isNull()) {
+    for (int i = 1; i <= lastRequiredCol; ++i) {
+        if (model->index(row, i).data().toString().trimmed().isEmpty()) {
             allFilled = false;
             break;
         }
     }
 
     if (allFilled) {
-        // Пытаемся сохранить
         if (model->submitAll()) {
-            qDebug() << "Успешное сохранение в базу данных.";
-            model->select(); // Обновляем, чтобы увидеть ФИО вместо ID
-
-            if (currentTable == "groups") {
-                model->insertColumn(4);
-                model->setHeaderData(4, Qt::Horizontal, "Действие");
-
-                // Переназначаем делегаты, так как select() их сбрасывает
-                ui->tableView->setItemDelegateForColumn(3,
-                    new RelationComboBoxDelegate("users", "full_name", "role='trainer'", this));
-                ui->tableView->setItemDelegateForColumn(4, new ButtonDelegate(this));
-                ui->tableView->hideColumn(0);
-            }
-        } else {
-            qDebug() << "Ошибка сохранения:" << model->lastError().text();
-            // Если ошибка NOT NULL, значит ID всё равно не дошел.
-            // Но с новым делегатом этой ошибки быть не должно.
+            // МГНОВЕННОЕ ОБНОВЛЕНИЕ
+            model->select();
+            // Скрываем ID и возвращаем делегаты
+            setupDelegatesForCurrentTable();
         }
+    }
+}
+
+void MainWindow::setupDelegatesForCurrentTable() {
+    ui->tableView->hideColumn(0); // Скрываем ID
+
+    if (currentTable == "groups") {
+        ui->tableView->setItemDelegateForColumn(3, new RelationComboBoxDelegate("users", "full_name", "role='trainer'", this));
+        ui->tableView->setItemDelegateForColumn(4, new ButtonDelegate(this));
+    }
+    else if (currentTable == "schedule") {
+        ui->tableView->setItemDelegateForColumn(1, new RelationComboBoxDelegate("groups", "name", "", this));
+        QStringList days = {"Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"};
+        ui->tableView->setItemDelegateForColumn(2, new FixedListDelegate(days, this));
+        ui->tableView->setItemDelegateForColumn(3, new TimeEditDelegate(this));
+        ui->tableView->setItemDelegateForColumn(4, new TimeEditDelegate(this));
     }
 }
 
@@ -300,31 +362,70 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 void MainWindow::on_anySearchField_changed() {
     QMap<int, QString> filters;
 
+    // Логируем для отладки, чтобы видеть, какой метод вызван
+    qDebug() << "Фильтрация для таблицы:" << currentTable;
+
     if (currentTable == "users") {
-        // Таблица: id(0), login(1), pass(2), full_name(3)
-        filters[3] = ui->searchLineEdit1->text();
+        // Таблица: id(0), login(1), pass(2), full_name(3), role(4)
+        QString fio = ui->searchLineEdit1->text().trimmed();
+        if (!fio.isEmpty()) {
+            filters.insert(3, fio);
+        }
     }
     else if (currentTable == "groups") {
-        // id(0), name(1), dir(2), trainer(3) - тут trainer подменяется на ФИО
-        if (!ui->searchLineEdit1->text().isEmpty())
-            filters[1] = ui->searchLineEdit1->text(); // Поиск по названию
-        else
-            filters[3] = ui->filterLineEdit1->text(); // Фильтр по имени тренера
+        // Таблица: id(0), name(1), specialization(2), trainer_id(3)
+        // ВАЖНО: Каждое поле проверяется отдельно (без else)
+
+        // 1. Поиск по Названию группы (Колонка 1)
+        QString groupName = ui->searchLineEdit1->text().trimmed();
+        if (!groupName.isEmpty()) {
+            filters.insert(1, groupName);
+        }
+
+        // 2. Поиск по Направлению/Специализации (Колонка 2)
+        // Проверьте, что в дизайнере это поле называется searchLineEdit2
+        QString direction = ui->searchLineEdit2->text().trimmed();
+        if (!direction.isEmpty()) {
+            filters.insert(2, direction);
+        }
+
+        // 3. Поиск по ФИО Тренера (Колонка 3)
+        // Обычно это поле фильтрации в выпадающем списке или отдельный lineEdit
+        QString trainer = ui->filterLineEdit1->text().trimmed();
+        if (!trainer.isEmpty()) {
+            filters.insert(3, trainer);
+        }
     }
     else if (currentTable == "schedule") {
-        // id(0), group(1) - подменяется на имя, day(2)
-        if (!ui->searchLineEdit1->text().isEmpty())
-            filters[1] = ui->searchLineEdit1->text(); // Имя группы
-        else
-            filters[2] = ui->searchLineEdit2->text(); // День недели
+        // Таблица: id(0), group_id(1), day_of_week(2), ...
+        QString group = ui->searchLineEdit1->text().trimmed();
+        if (!group.isEmpty()) {
+            filters.insert(1, group);
+        }
+
+        QString day = ui->searchLineEdit2->text().trimmed();
+        if (!day.isEmpty()) {
+            filters.insert(2, day);
+        }
     }
     else if (currentTable == "attendance") {
-        // id(0), student(1) - подменяется на ФИО, group(2) - на имя
-        if (!ui->searchLineEdit1->text().isEmpty())
-            filters[1] = ui->searchLineEdit1->text(); // ФИО студента
-        else
-            filters[2] = ui->searchLineEdit2->text(); // Имя группы
+        // Таблица: id(0), student_id(1), group_id(2), date(3), status(4)
+        QString student = ui->searchLineEdit1->text().trimmed();
+        if (!student.isEmpty()) {
+            filters.insert(1, student);
+        }
+
+        QString group = ui->searchLineEdit2->text().trimmed();
+        if (!group.isEmpty()) {
+            filters.insert(2, group);
+        }
     }
 
-    tableManager->applyMultiFilter(filters);
+    // Проверяем в консоли, что мы собрали
+    qDebug() << "Итоговая карта фильтров:" << filters;
+
+    // Отправляем карту в TableManager
+    if (tableManager) {
+        tableManager->applyMultiFilter(filters);
+    }
 }

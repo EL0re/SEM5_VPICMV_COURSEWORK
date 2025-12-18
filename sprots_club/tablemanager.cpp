@@ -6,6 +6,10 @@
 #include <QPainter>
 #include <QSqlRelation>
 #include <QSqlRelationalDelegate>
+#include <QDebug>
+#include <QSqlError>
+#include <QHeaderView>
+
 
 TableManager::TableManager(QObject *parent) : QObject(parent)
 {
@@ -19,39 +23,42 @@ void TableManager::setupTable(const QString &tableName, QTableView *view) {
     model = new QSqlRelationalTableModel(this, QSqlDatabase::database());
     model->setTable(tableName);
 
-    // Настройка связей
+    // Настройка связей (Relations)
     if (tableName == "groups") {
-        // Связываем 3-й столбец (тренер) с таблицей users (поле id), отображаем full_name
+        // Столбец 3 (trainer_id) -> таблица users (id), показ full_name
         model->setRelation(3, QSqlRelation("users", "id", "full_name"));
-        QSqlTableModel *relModel = model->relationModel(3);
-        if (relModel) {
-            relModel->setFilter("role = 'trainer'");
-            relModel->select();
-        }
-    } else if (tableName == "attendance") {
+    }
+    else if (tableName == "schedule") {
+        // Столбец 1 (group_id) -> таблица groups (id), показ name
+        model->setRelation(1, QSqlRelation("groups", "id", "name"));
+    }
+    else if (tableName == "attendance") {
         model->setRelation(1, QSqlRelation("users", "id", "full_name"));
         model->setRelation(2, QSqlRelation("groups", "id", "name"));
     }
 
-    // Оставляем стратегию ManualSubmit для контроля заполнения
+    // Устанавливаем стратегию ManualSubmit, чтобы onModelDataChanged мог валидировать данные
     model->setEditStrategy(QSqlTableModel::OnManualSubmit);
-    model->select();
 
+    // Загружаем данные
+    if (!model->select()) {
+        qDebug() << "Ошибка загрузки таблицы:" << model->lastError().text();
+    }
+
+    // Добавляем виртуальный столбец для кнопки, если это Группы
     if (tableName == "groups") {
         model->insertColumn(4);
     }
 
-    proxyModel = new QSortFilterProxyModel(this);
+    // Настройка нашей кастомной мульти-фильтр прокси-модели
+    proxyModel = new MultiFilterProxyModel();
     proxyModel->setSourceModel(model);
+    proxyModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
 
     view->setModel(proxyModel);
 
-    // ВОТ ЭТА СТРОКА РЕШАЕТ ПРОБЛЕМУ ОЧИСТКИ:
-    // Она создает ComboBox, и пользователь просто выбирает тренера из существующих
-    view->setItemDelegate(new QSqlRelationalDelegate(view));
-
-    // Чтобы список открывался удобнее
     view->setEditTriggers(QAbstractItemView::DoubleClicked | QAbstractItemView::SelectedClicked);
+    view->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 }
 
 
@@ -91,16 +98,14 @@ bool ButtonDelegate::editorEvent(QEvent *event, QAbstractItemModel *model, const
 }
 
 void TableManager::applyMultiFilter(const QMap<int, QString> &columnFilters) {
-    if (!proxyModel) return;
+    // Приводим к нашему типу MultiFilterProxyModel
+    auto multiProxy = qobject_cast<MultiFilterProxyModel*>(proxyModel);
 
-    QMapIterator<int, QString> i(columnFilters);
-    while (i.hasNext()) {
-        i.next();
-        if (!i.value().isEmpty()) {
-            proxyModel->setFilterKeyColumn(i.key());
-            proxyModel->setFilterFixedString(i.value());
-            return;
-        }
+    if (multiProxy) {
+        // Вызываем наш публичный метод, который мы только что создали
+        multiProxy->setColumnFilters(columnFilters);
+    } else {
+        // Если вдруг proxyModel еще старого типа, просто логируем
+        qDebug() << "Ошибка: proxyModel не является MultiFilterProxyModel";
     }
-    proxyModel->setFilterFixedString("");
 }

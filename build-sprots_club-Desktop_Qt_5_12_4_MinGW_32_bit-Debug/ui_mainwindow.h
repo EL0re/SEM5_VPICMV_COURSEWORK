@@ -57,13 +57,61 @@ public:
         pushButton = new QPushButton(centralWidget);
         pushButton->setObjectName(QString::fromUtf8("pushButton"));
         pushButton->setGeometry(QRect(10, 190, 150, 40));
+        pushButton->setStyleSheet(QString::fromUtf8("QPushButton {\n"
+"    background-color: #e0e0e0; \n"
+"    color: #444444;\n"
+"    border: none;\n"
+"    border-radius: 5px;\n"
+"    padding: 10px;\n"
+"    text-align: center; \n"
+"    font-weight: 500;\n"
+"}\n"
+"\n"
+"QPushButton:hover {\n"
+"    background-color: #d5d5d5;\n"
+"}\n"
+"\n"
+"QPushButton:checked {\n"
+"    background-color: #bdbdbd;\n"
+"    font-weight: bold;\n"
+"}"));
         pushButton_2 = new QPushButton(centralWidget);
         pushButton_2->setObjectName(QString::fromUtf8("pushButton_2"));
         pushButton_2->setGeometry(QRect(10, 130, 150, 40));
+        pushButton_2->setStyleSheet(QString::fromUtf8("QPushButton {\n"
+"    background-color: #e0e0e0; \n"
+"    color: #444444;\n"
+"    border: none;\n"
+"    border-radius: 5px;\n"
+"    padding: 10px;\n"
+"    text-align: center; \n"
+"    font-weight: 500;\n"
+"}\n"
+"\n"
+"QPushButton:hover {\n"
+"    background-color: #d5d5d5;\n"
+"}\n"
+"\n"
+"QPushButton:checked {\n"
+"    background-color: #bdbdbd;\n"
+"    font-weight: bold;\n"
+"}"));
         searchLineEdit1 = new QLineEdit(centralWidget);
         searchLineEdit1->setObjectName(QString::fromUtf8("searchLineEdit1"));
         searchLineEdit1->setGeometry(QRect(170, 90, 191, 31));
         searchLineEdit1->setAutoFillBackground(false);
+        searchLineEdit1->setStyleSheet(QString::fromUtf8("QLineEdit {\n"
+"    background-color: #f0f0f0;\n"
+"    border: 1px solid #d1d1d1; \n"
+"    border-radius: 12px;\n"
+"    padding: 6px 12px;\n"
+"    color: #333333; \n"
+"}\n"
+"\n"
+"QLineEdit:focus {\n"
+"    background-color: #ffffff; \n"
+"    border: 1px solid #a0a0a0;\n"
+"}"));
         searchLineEdit1->setDragEnabled(false);
         searchLineEdit1->setPlaceholderText(QString::fromUtf8(""));
         logoutButton = new QPushButton(centralWidget);
@@ -84,12 +132,60 @@ public:
         searchLineEdit2 = new QLineEdit(centralWidget);
         searchLineEdit2->setObjectName(QString::fromUtf8("searchLineEdit2"));
         searchLineEdit2->setGeometry(QRect(370, 90, 191, 31));
+        searchLineEdit2->setStyleSheet(QString::fromUtf8("QLineEdit {\n"
+"    background-color: #f0f0f0; \n"
+"    border: 1px solid #d1d1d1; \n"
+"    border-radius: 12px;\n"
+"    padding: 6px 12px;\n"
+"    color: #333333;\n"
+"}\n"
+"\n"
+"QLineEdit:focus {\n"
+"    background-color: #ffffff;\n"
+"    border: 1px solid #a0a0a0;\n"
+"}"));
         pushButton_3 = new QPushButton(centralWidget);
         pushButton_3->setObjectName(QString::fromUtf8("pushButton_3"));
         pushButton_3->setGeometry(QRect(10, 250, 150, 40));
+        pushButton_3->setStyleSheet(QString::fromUtf8("QPushButton {\n"
+"    background-color: #e0e0e0; \n"
+"    color: #444444;\n"
+"    border: none;\n"
+"    border-radius: 5px;\n"
+"    padding: 10px;\n"
+"    text-align: center; \n"
+"    font-weight: 500;\n"
+"}\n"
+"\n"
+"QPushButton:hover {\n"
+"    background-color: #d5d5d5;\n"
+"}\n"
+"\n"
+"QPushButton:checked {\n"
+"    background-color: #bdbdbd;\n"
+"    font-weight: bold;\n"
+"}"));
         pushButton_4 = new QPushButton(centralWidget);
         pushButton_4->setObjectName(QString::fromUtf8("pushButton_4"));
         pushButton_4->setGeometry(QRect(10, 310, 150, 40));
+        pushButton_4->setStyleSheet(QString::fromUtf8("QPushButton {\n"
+"    background-color: #e0e0e0; \n"
+"    color: #444444;\n"
+"    border: none;\n"
+"    border-radius: 5px;\n"
+"    padding: 10px;\n"
+"    text-align: center; \n"
+"    font-weight: 500;\n"
+"}\n"
+"\n"
+"QPushButton:hover {\n"
+"    background-color: #d5d5d5;\n"
+"}\n"
+"\n"
+"QPushButton:checked {\n"
+"    background-color: #bdbdbd;\n"
+"    font-weight: bold;\n"
+"}"));
         Role_Label = new QLabel(centralWidget);
         Role_Label->setObjectName(QString::fromUtf8("Role_Label"));
         Role_Label->setGeometry(QRect(10, 770, 70, 30));
@@ -105,9 +201,29 @@ public:
         filterLineEdit1 = new QLineEdit(centralWidget);
         filterLineEdit1->setObjectName(QString::fromUtf8("filterLineEdit1"));
         filterLineEdit1->setGeometry(QRect(670, 90, 191, 31));
+        filterLineEdit1->setStyleSheet(QString::fromUtf8("QLineEdit {\n"
+"    background-color: #f0f0f0; \n"
+"    border: 1px solid #d1d1d1; \n"
+"    color: #333333;\n"
+"}\n"
+"\n"
+"QLineEdit:focus {\n"
+"    background-color: #ffffff;\n"
+"    border: 1px solid #a0a0a0;\n"
+"}"));
         filterLineEdit2 = new QLineEdit(centralWidget);
         filterLineEdit2->setObjectName(QString::fromUtf8("filterLineEdit2"));
         filterLineEdit2->setGeometry(QRect(870, 90, 191, 31));
+        filterLineEdit2->setStyleSheet(QString::fromUtf8("QLineEdit {\n"
+"    background-color: #f0f0f0; \n"
+"    border: 1px solid #d1d1d1; \n"
+"    color: #333333;\n"
+"}\n"
+"\n"
+"QLineEdit:focus {\n"
+"    background-color: #ffffff;\n"
+"    border: 1px solid #a0a0a0;\n"
+"}"));
         labelSearch = new QLabel(centralWidget);
         labelSearch->setObjectName(QString::fromUtf8("labelSearch"));
         labelSearch->setGeometry(QRect(170, 50, 81, 41));
@@ -120,6 +236,16 @@ public:
         addButton->setObjectName(QString::fromUtf8("addButton"));
         addButton->setGeometry(QRect(1110, 90, 31, 31));
         addButton->setFont(font1);
+        addButton->setStyleSheet(QString::fromUtf8("QPushButton {\n"
+"    background-color: #4CAF50;\n"
+"    color: white;\n"
+"    border-radius: 8px;\n"
+"    font-weight: bold;\n"
+"    padding: 5px;\n"
+"}\n"
+"QPushButton:hover {\n"
+"    background-color: #45a049;\n"
+"}"));
         delButton = new QPushButton(centralWidget);
         delButton->setObjectName(QString::fromUtf8("delButton"));
         delButton->setGeometry(QRect(1150, 90, 51, 31));
@@ -129,6 +255,16 @@ public:
         font2.setWeight(75);
         delButton->setFont(font2);
         delButton->setAutoFillBackground(false);
+        delButton->setStyleSheet(QString::fromUtf8("QPushButton {\n"
+"    background-color: #f44336;\n"
+"    color: white;\n"
+"    border-radius: 8px;\n"
+"    font-weight: bold;\n"
+"    padding: 5px;\n"
+"}\n"
+"QPushButton:hover {\n"
+"    background-color: #d32f2f;\n"
+"}"));
         MainWindow->setCentralWidget(centralWidget);
 
         retranslateUi(MainWindow);

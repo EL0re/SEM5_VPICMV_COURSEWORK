@@ -41,6 +41,7 @@ private:
     QString currentTable;
     QString currentSearchField;
 
+    void setupDelegatesForCurrentTable();
     void setupGroupDelegates();
     int getUserIdByName(const QString &fullName);
     void switchToTable(const QString &tableName, const QString &title);

@@ -7,10 +7,14 @@
 #include <QObject>
 #include <QSqlRelationalTableModel>
 #include <QSortFilterProxyModel>
+#include <QMap>
 #include <QTableView>
 #include <QItemDelegate>
 #include <QComboBox>
 #include <QSqlQuery>
+#include <QTimeEdit>
+
+
 
 class TableManager : public QObject
 {
@@ -92,6 +96,91 @@ private:
     QString m_table;
     QString m_displayCol;
     QString m_filter;
+};
+
+class MultiFilterProxyModel : public QSortFilterProxyModel {
+    Q_OBJECT
+public:
+    QMap<int, QString> columnFilters;
+
+    // Добавляем этот публичный метод
+    void setColumnFilters(const QMap<int, QString> &filters) {
+        columnFilters = filters;
+        invalidateFilter(); // Здесь вызов разрешен, так как это внутри класса
+    }
+
+protected:
+    bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const override {
+        if (columnFilters.isEmpty()) return true;
+
+        QMapIterator<int, QString> it(columnFilters);
+        while (it.hasNext()) {
+            it.next();
+            int column = it.key();
+            QString filterValue = it.value().toLower().trimmed();
+
+            if (filterValue.isEmpty()) continue;
+
+            QModelIndex index = sourceModel()->index(source_row, column, source_parent);
+            QString rowValue = sourceModel()->data(index).toString().toLower();
+
+            if (!rowValue.contains(filterValue)) {
+                return false;
+            }
+        }
+        return true;
+    }
+};
+
+class FixedListDelegate : public QItemDelegate {
+    Q_OBJECT
+public:
+    FixedListDelegate(const QStringList &items, QObject *parent = nullptr)
+        : QItemDelegate(parent), m_items(items) {}
+
+    QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &, const QModelIndex &) const override {
+        QComboBox *editor = new QComboBox(parent);
+        editor->addItems(m_items);
+        return editor;
+    }
+
+    void setEditorData(QWidget *editor, const QModelIndex &index) const override {
+        QString value = index.data(Qt::EditRole).toString();
+        QComboBox *cb = static_cast<QComboBox*>(editor);
+        cb->setCurrentText(value);
+    }
+
+    void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const override {
+        QComboBox *cb = static_cast<QComboBox*>(editor);
+        model->setData(index, cb->currentText(), Qt::EditRole);
+    }
+
+private:
+    QStringList m_items;
+};
+
+// 2. Делегат для выбора времени (TIME)
+class TimeEditDelegate : public QItemDelegate {
+    Q_OBJECT
+public:
+    TimeEditDelegate(QObject *parent = nullptr) : QItemDelegate(parent) {}
+
+    QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &, const QModelIndex &) const override {
+        QTimeEdit *editor = new QTimeEdit(parent);
+        editor->setDisplayFormat("HH:mm"); // Формат без секунд для удобства
+        return editor;
+    }
+
+    void setEditorData(QWidget *editor, const QModelIndex &index) const override {
+        QTime value = index.data(Qt::EditRole).toTime();
+        QTimeEdit *te = static_cast<QTimeEdit*>(editor);
+        te->setTime(value);
+    }
+
+    void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const override {
+        QTimeEdit *te = static_cast<QTimeEdit*>(editor);
+        model->setData(index, te->time().toString("HH:mm"), Qt::EditRole);
+    }
 };
 
 #endif // TABLEMANAGER_H
