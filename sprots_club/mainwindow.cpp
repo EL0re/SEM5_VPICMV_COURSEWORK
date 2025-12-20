@@ -9,6 +9,7 @@
 #include <QMessageBox>
 #include "attendanceadddialog.h"
 #include "studentsortproxymodel.h"
+#include <QSqlRecord>
 
 MainWindow::MainWindow(const QString &fullName, QWidget *parent) :
     QMainWindow(parent),
@@ -18,6 +19,10 @@ MainWindow::MainWindow(const QString &fullName, QWidget *parent) :
     tableManager = new TableManager(this);
 
     ui->FIO_Label->setText(fullName);
+
+    ui->tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+    ui->tableView->setSelectionMode(QAbstractItemView::ExtendedSelection);
+
     ui->tableView->setSortingEnabled(true);
     ui->tableView->installEventFilter(this);
     connect(ui->searchLineEdit1, &QLineEdit::textChanged, this, &MainWindow::on_anySearchField_changed);
@@ -215,6 +220,76 @@ void MainWindow::on_addButton_clicked() {
 
 }
 
+void MainWindow::on_delButton_clicked() {
+    QItemSelectionModel *select = ui->tableView->selectionModel();
+    QModelIndexList selectedRows = select->selectedRows();
+
+    if (selectedRows.isEmpty()) {
+        QModelIndex current = ui->tableView->currentIndex();
+        if (current.isValid()) selectedRows.append(current);
+        else return;
+    }
+
+    auto res = QMessageBox::question(this, "Подтверждение",
+        "Удалить выбранные записи?\nЭто вызовет каскадное удаление всех связанных данных!",
+        QMessageBox::Yes | QMessageBox::No);
+    if (res != QMessageBox::Yes) return;
+
+    auto model = tableManager->getModel();
+    auto proxy = tableManager->getProxyModel();
+
+    // 1. Собираем ID записей, которые нужно удалить
+    // Мы будем удалять по ID, это самый надежный способ для SQLite
+    QList<int> idsToDelete;
+    int idColumn = model->record().indexOf("id");
+    if (idColumn == -1) idColumn = 0;
+
+    for (const QModelIndex &proxyIdx : selectedRows) {
+        QModelIndex sourceIdx = proxy->mapToSource(proxyIdx);
+        int row = sourceIdx.row();
+        if (row < model->rowCount()) {
+            int id = model->data(model->index(row, idColumn)).toInt();
+            if (id > 0) idsToDelete.append(id);
+        }
+    }
+
+    if (idsToDelete.isEmpty()) return;
+
+    // 2. Выполняем удаление через прямой SQL запрос
+    // Это гарантирует, что каскад сработает мгновенно, и не будет ошибки "No fields to update"
+    QSqlDatabase db = QSqlDatabase::database();
+    db.transaction();
+
+    QSqlQuery query;
+    query.exec("PRAGMA foreign_keys = ON;");
+
+    bool success = true;
+    for (int id : idsToDelete) {
+        query.prepare(QString("DELETE FROM %1 WHERE id = ?").arg(currentTable));
+        query.addBindValue(id);
+        if (!query.exec()) {
+            success = false;
+            break;
+        }
+    }
+
+    if (success && db.commit()) {
+        qDebug() << "Успешное удаление ID:" << idsToDelete;
+
+        // 3. ПЕРЕЗАГРУЗКА МОДЕЛИ
+        // Вместо submitAll (который глючит), мы просто перечитываем данные
+        model->select();
+
+        // Гарантируем, что пустая строка в конце пересоздастся правильно
+        ensureTrailingEmptyRow();
+    } else {
+        db.rollback();
+        QMessageBox::critical(this, "Ошибка", "Не удалось удалить записи: " + query.lastError().text());
+    }
+}
+
+
+
 void MainWindow::on_logoutButton_clicked()
 {
     logoutRequested = true;
@@ -364,6 +439,10 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
                 commitLastRow();
                 return true; // Событие обработано
             }
+        }
+        if (keyEvent->key() == Qt::Key_Delete) {
+            on_delButton_clicked(); // Вызываем тот же метод, что и у кнопки
+            return true;
         }
     }
 

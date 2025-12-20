@@ -127,7 +127,7 @@ void TableManager::setupTable(const QString &tableName, QTableView *view) {
     }
 
     // 8. Настройки отображения таблицы
-    view->setEditTriggers(QAbstractItemView::AllEditTriggers);
+    view->setEditTriggers(QAbstractItemView::DoubleClicked | QAbstractItemView::EditKeyPressed);
     view->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     view->viewport()->update();
 }
