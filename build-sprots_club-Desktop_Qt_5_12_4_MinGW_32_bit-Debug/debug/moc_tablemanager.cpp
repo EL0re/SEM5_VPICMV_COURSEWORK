@@ -91,8 +91,8 @@ int TableManager::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     return _id;
 }
 struct qt_meta_stringdata_ButtonDelegate_t {
-    QByteArrayData data[4];
-    char stringdata0[34];
+    QByteArrayData data[5];
+    char stringdata0[48];
 };
 #define QT_MOC_LITERAL(idx, ofs, len) \
     Q_STATIC_BYTE_ARRAY_DATA_HEADER_INITIALIZER_WITH_OFFSET(len, \
@@ -104,10 +104,12 @@ static const qt_meta_stringdata_ButtonDelegate_t qt_meta_stringdata_ButtonDelega
 QT_MOC_LITERAL(0, 0, 14), // "ButtonDelegate"
 QT_MOC_LITERAL(1, 15, 13), // "buttonClicked"
 QT_MOC_LITERAL(2, 29, 0), // ""
-QT_MOC_LITERAL(3, 30, 3) // "row"
+QT_MOC_LITERAL(3, 30, 11), // "QModelIndex"
+QT_MOC_LITERAL(4, 42, 5) // "index"
 
     },
-    "ButtonDelegate\0buttonClicked\0\0row"
+    "ButtonDelegate\0buttonClicked\0\0QModelIndex\0"
+    "index"
 };
 #undef QT_MOC_LITERAL
 
@@ -128,7 +130,7 @@ static const uint qt_meta_data_ButtonDelegate[] = {
        1,    1,   19,    2, 0x06 /* Public */,
 
  // signals: parameters
-    QMetaType::Void, QMetaType::Int,    3,
+    QMetaType::Void, 0x80000000 | 3,    4,
 
        0        // eod
 };
@@ -139,13 +141,13 @@ void ButtonDelegate::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _
         auto *_t = static_cast<ButtonDelegate *>(_o);
         Q_UNUSED(_t)
         switch (_id) {
-        case 0: _t->buttonClicked((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 0: _t->buttonClicked((*reinterpret_cast< const QModelIndex(*)>(_a[1]))); break;
         default: ;
         }
     } else if (_c == QMetaObject::IndexOfMethod) {
         int *result = reinterpret_cast<int *>(_a[0]);
         {
-            using _t = void (ButtonDelegate::*)(int );
+            using _t = void (ButtonDelegate::*)(const QModelIndex & );
             if (*reinterpret_cast<_t *>(_a[1]) == static_cast<_t>(&ButtonDelegate::buttonClicked)) {
                 *result = 0;
                 return;
@@ -195,7 +197,7 @@ int ButtonDelegate::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
 }
 
 // SIGNAL 0
-void ButtonDelegate::buttonClicked(int _t1)
+void ButtonDelegate::buttonClicked(const QModelIndex & _t1)
 {
     void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(&_t1)) };
     QMetaObject::activate(this, &staticMetaObject, 0, _a);

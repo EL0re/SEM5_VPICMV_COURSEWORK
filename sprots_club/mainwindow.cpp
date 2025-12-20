@@ -101,7 +101,8 @@ void MainWindow::switchToTable(const QString &tableName, const QString &title) {
         ui->tableView->setItemDelegateForColumn(4, btnDel);
 
         // Пример обработки нажатия
-        connect(btnDel, &ButtonDelegate::buttonClicked, this, [this](int row){
+        connect(btnDel, &ButtonDelegate::buttonClicked, this, [this](const QModelIndex &index){
+            int row = index.row();
             qDebug() << "Нажата кнопка в строке:" << row;
         });
     }

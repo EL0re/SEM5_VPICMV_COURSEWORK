@@ -25,8 +25,23 @@ void TableManager::setupTable(const QString &tableName, QTableView *view) {
 
     // Настройка связей (Relations)
     if (tableName == "groups") {
-        // Столбец 3 (trainer_id) -> таблица users (id), показ full_name
         model->setRelation(3, QSqlRelation("users", "id", "full_name"));
+
+        // Проверяем, добавлен ли столбец (если нет в БД)
+        if (model->columnCount() <= 4) {
+            model->insertColumn(4);
+            model->setHeaderData(4, Qt::Horizontal, "Состав");
+        }
+
+        // Создаем делегат и вешаем его ТОЛЬКО на 4-й столбец
+        ButtonDelegate *btnDelegate = new ButtonDelegate(view);
+        view->setItemDelegateForColumn(4, btnDelegate);
+
+        // Соединяем сигнал (теперь в лямбде можно открыть ваше модальное окно)
+        connect(btnDelegate, &ButtonDelegate::buttonClicked, this, [this](const QModelIndex &index) {
+            qDebug() << "Нажата кнопка в строке:" << index.row();
+            // Здесь вызывайте AttendanceAddDialog или другое окно
+        });
     }
     else if (tableName == "schedule") {
         // Столбец 1 (group_id) -> таблица groups (id), показ name
@@ -82,17 +97,45 @@ bool CheckBoxDelegate::editorEvent(QEvent *event, QAbstractItemModel *model, con
 }
 
 void ButtonDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
-    QStyleOptionButton button;
-    button.rect = option.rect.adjusted(2, 2, -2, -2);
-    button.text = "Ред.";
-    button.state = QStyle::State_Enabled;
-    QApplication::style()->drawControl(QStyle::CE_PushButton, &button, painter);
+    // Рассчитываем размеры: ширина в 2 раза меньше ячейки
+    int btnWidth = option.rect.width() / 2;
+    int xOffset = (option.rect.width() - btnWidth) / 2;
+
+    // Создаем прямоугольник кнопки с отступами сверху/снизу (4px)
+    QRect btnRect = option.rect.adjusted(xOffset, 4, -xOffset, -4);
+
+    painter->save();
+    painter->setRenderHint(QPainter::Antialiasing);
+
+    // Рисуем синий фон кнопки (стиль как у QLineEdit:focus или кнопок сохранения)
+    painter->setBrush(QColor("#2196F3"));
+    painter->setPen(Qt::NoPen);
+    painter->drawRoundedRect(btnRect, 8, 8); // Скругление 8px
+
+    // Рисуем белый текст по центру
+    painter->setPen(Qt::white);
+    QFont font = painter->font();
+    font.setBold(true);
+    painter->setFont(font);
+    painter->drawText(btnRect, Qt::AlignCenter, "Ред.");
+
+    painter->restore();
 }
 
 bool ButtonDelegate::editorEvent(QEvent *event, QAbstractItemModel *model, const QStyleOptionViewItem &option, const QModelIndex &index) {
     if (event->type() == QEvent::MouseButtonRelease) {
-        emit buttonClicked(index.row());
-        return true;
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+
+        // Повторяем расчет геометрии кнопки для проверки попадания
+        int btnWidth = option.rect.width() / 2;
+        int xOffset = (option.rect.width() - btnWidth) / 2;
+        QRect btnRect = option.rect.adjusted(xOffset, 4, -xOffset, -4);
+
+        if (btnRect.contains(mouseEvent->pos())) {
+            // Исправляем вызов: передаем index, а не только row, если нужно больше данных
+            emit buttonClicked(index);
+            return true;
+        }
     }
     return false;
 }
