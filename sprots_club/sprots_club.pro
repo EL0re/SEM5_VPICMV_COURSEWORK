@@ -29,12 +29,14 @@ SOURCES += \
         logindialog.cpp \
         main.cpp \
         mainwindow.cpp \
+        studentsortproxymodel.cpp \
         tablemanager.cpp
 
 HEADERS += \
         attendanceadddialog.h \
         logindialog.h \
         mainwindow.h \
+        studentsortproxymodel.h \
         tablemanager.h
 
 FORMS += \

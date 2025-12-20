@@ -1,0 +1,11 @@
+debug/attendanceadddialog.o
+debug/logindialog.o
+debug/main.o
+debug/mainwindow.o
+debug/studentsortproxymodel.o
+debug/tablemanager.o
+debug/moc_attendanceadddialog.o
+debug/moc_logindialog.o
+debug/moc_mainwindow.o
+debug/moc_studentsortproxymodel.o
+debug/moc_tablemanager.o

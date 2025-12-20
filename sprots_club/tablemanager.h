@@ -101,6 +101,8 @@ private:
 class MultiFilterProxyModel : public QSortFilterProxyModel {
     Q_OBJECT
 public:
+    explicit MultiFilterProxyModel(QObject *parent = nullptr)
+            : QSortFilterProxyModel(parent) {}
     QMap<int, QString> columnFilters;
 
     // Добавляем этот публичный метод

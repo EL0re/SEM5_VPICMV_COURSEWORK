@@ -1,0 +1,11 @@
+release/attendanceadddialog.o
+release/logindialog.o
+release/main.o
+release/mainwindow.o
+release/studentsortproxymodel.o
+release/tablemanager.o
+release/moc_attendanceadddialog.o
+release/moc_logindialog.o
+release/moc_mainwindow.o
+release/moc_studentsortproxymodel.o
+release/moc_tablemanager.o
