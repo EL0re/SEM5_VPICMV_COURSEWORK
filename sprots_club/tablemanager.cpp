@@ -132,6 +132,11 @@ void TableManager::setupTable(const QString &tableName, QTableView *view) {
     view->viewport()->update();
 }
 
+QWidget *CheckBoxDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const {
+    // Возвращаем nullptr, чтобы текстовое поле (QLineEdit) не создавалось при клике
+    return nullptr;
+}
+
 
 void CheckBoxDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
     QString status = index.data().toString();
@@ -144,10 +149,18 @@ void CheckBoxDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
 }
 
 bool CheckBoxDelegate::editorEvent(QEvent *event, QAbstractItemModel *model, const QStyleOptionViewItem &option, const QModelIndex &index) {
+    // Проверяем, что это отпускание кнопки мыши
     if (event->type() == QEvent::MouseButtonRelease) {
-        QString currentStatus = index.data().toString();
-        model->setData(index, (currentStatus == "present" ? "absent" : "present"));
-        return true;
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+        if (mouseEvent->button() == Qt::LeftButton) {
+            QString currentStatus = index.data().toString();
+            // Инвертируем статус
+            QString newStatus = (currentStatus == "present" ? "absent" : "present");
+
+            // Записываем данные в модель
+            model->setData(index, newStatus, Qt::EditRole);
+            return true;
+        }
     }
     return false;
 }

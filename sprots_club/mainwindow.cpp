@@ -60,12 +60,12 @@ void MainWindow::updateUI(bool s1, bool s2, bool f1, bool f2, const QString &ps1
 }
 
 void MainWindow::switchToTable(const QString &tableName, const QString &title) {
-    // Снимаем фокус с текущей ячейки
+    // 1. Сбрасываем фокус
     if (ui->tableView->currentIndex().isValid()) {
         ui->tableView->setCurrentIndex(QModelIndex());
     }
 
-    // Сохраняем изменения в текущей таблице перед переходом
+    // 2. Сохраняем изменения перед переходом
     if (tableManager && tableManager->getModel()) {
         if (tableManager->getModel()->isDirty()) {
             if (!tableManager->getModel()->submitAll()) {
@@ -78,51 +78,78 @@ void MainWindow::switchToTable(const QString &tableName, const QString &title) {
     currentTable = tableName;
     ui->label->setText(title);
 
-    // ВАЖНО: Вызываем настройку таблицы. Она сама поставит кнопку и делегаты.
+    // 3. ПЕРВЫМ ДЕЛОМ: Настраиваем базовую структуру через менеджер
+    // Здесь создается модель, прокси и добавляется кнопка для групп в последнюю колонку.
     tableManager->setupTable(tableName, ui->tableView);
 
     auto model = tableManager->getModel();
     if (!model) return;
 
-    // Настраиваем только заголовки и UI элементы
+    // 4. НАКЛАДЫВАЕМ ДЕЛЕГАТЫ (Возвращаем списки и счетчики)
+
     if (tableName == "users") {
         model->setHeaderData(1, Qt::Horizontal, "Логин");
         model->setHeaderData(2, Qt::Horizontal, "Пароль");
         model->setHeaderData(3, Qt::Horizontal, "ФИО");
         model->setHeaderData(4, Qt::Horizontal, "Роль");
+
+        // Возвращаем список ролей
+        QStringList roles = {"admin", "trainer", "student"};
+        ui->tableView->setItemDelegateForColumn(4, new FixedListDelegate(roles, this));
+
         ui->labelFilters->hide();
-        updateUI(true, false, false, false, "ФИО", "", "", "");
     }
     else if (tableName == "groups") {
+        // Колонка 3: Тренер (используем ваш RelationComboBoxDelegate)
+        ui->tableView->setItemDelegateForColumn(3, new RelationComboBoxDelegate("users", "full_name", "role='trainer'", this));
+
         model->setHeaderData(1, Qt::Horizontal, "Название группы");
         model->setHeaderData(2, Qt::Horizontal, "Направление");
         model->setHeaderData(3, Qt::Horizontal, "Тренер");
-        model->setHeaderData(4, Qt::Horizontal, "Доб. учеников"); // Заголовок для кнопки
+        model->setHeaderData(4, Qt::Horizontal, "Состав"); // Заголовок для кнопки
+
+        // ВАЖНО: Мы НЕ вызываем setItemDelegateForColumn(4, nullptr) здесь!
+        // TableManager уже поставил туда ButtonDelegate, и мы его не трогаем.
+
         ui->labelFilters->show();
-        updateUI(true, false, true, true, "Название группы", "", "Тренер", "Направление");
     }
     else if (tableName == "schedule") {
+        // Колонка 1: Группа
+        ui->tableView->setItemDelegateForColumn(1, new RelationComboBoxDelegate("groups", "name", "", this));
+
+        // Колонка 2: День недели
+        QStringList days = {"Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"};
+        ui->tableView->setItemDelegateForColumn(2, new FixedListDelegate(days, this));
+
+        // Колонки 3 и 4: Время (счетчики/TimeEdit)
+        ui->tableView->setItemDelegateForColumn(3, new TimeEditDelegate(this));
+        ui->tableView->setItemDelegateForColumn(4, new TimeEditDelegate(this));
+
         model->setHeaderData(1, Qt::Horizontal, "Название группы");
         model->setHeaderData(2, Qt::Horizontal, "День недели");
         model->setHeaderData(3, Qt::Horizontal, "Вр. начала");
         model->setHeaderData(4, Qt::Horizontal, "Вр. окончания");
         model->setHeaderData(5, Qt::Horizontal, "Зал");
         ui->labelFilters->hide();
-        updateUI(true, true, false, false, "Группа", "День недели", "", "");
     }
     else if (tableName == "attendance") {
         model->setHeaderData(1, Qt::Horizontal, "ФИО");
         model->setHeaderData(2, Qt::Horizontal, "Название группы");
         model->setHeaderData(3, Qt::Horizontal, "Дата занятия");
         model->setHeaderData(4, Qt::Horizontal, "Статус");
+
+        // Колонки 1 и 2: Списки ФИО и Групп
+        ui->tableView->setItemDelegateForColumn(1, new RelationComboBoxDelegate("users", "full_name", "role='student'", this));
+        ui->tableView->setItemDelegateForColumn(2, new RelationComboBoxDelegate("groups", "name", "", this));
+
+        // Колонка 4: Чекбокс
+        ui->tableView->setItemDelegateForColumn(4, new CheckBoxDelegate(this));
+
         ui->labelFilters->show();
-        updateUI(true, true, true, false, "Ученик", "Дата", "Группа", "");
     }
 
-    // Скрываем колонку ID (она всегда 0-я)
+    // 5. Финальные штрихи
     ui->tableView->hideColumn(0);
-
-    // Обновляем вид (размеры колонок и пустая строка)
     reloadview();
 }
 
@@ -154,9 +181,13 @@ void MainWindow::on_addButton_clicked() {
 
             // exec() открывает окно как модальное и блокирует основное окно
         if (dialog.exec() == QDialog::Accepted) {
-                // Сюда попадем, если в диалоге нажали "Сохранить" (accept)
-            qDebug() << "Записи успешно сформированы (логика будет позже)";
+                    // ВАЖНО: После того как диалог закрыт с результатом Accepted,
+                    // записи уже в базе данных. Нужно обновить модель, чтобы их увидеть.
+            if (tableManager && tableManager->getModel()) {
+                tableManager->getModel()->select();
+            }
             reloadview();
+            qDebug() << "Записи посещаемости успешно добавлены и отображены.";
         }
     }
     else
@@ -164,22 +195,19 @@ void MainWindow::on_addButton_clicked() {
         auto model = tableManager->getModel();
         if (!model) return;
 
-            // Временно отключаем сортировку, чтобы строка не прыгала
         ui->tableView->setSortingEnabled(false);
 
         if (model->insertRow(0)) {
-                // ПРЕДЗАПОЛНЕНИЕ: Если это таблица пользователей, ставим роль по умолчанию,
-                // чтобы избежать ошибки CHECK constraint сразу при создании.
-        if (currentTable == "users") {
-            model->setData(model->index(0, 4), "student");
-        }
 
-                // Вычисляем индекс в прокси-модели
-        QModelIndex proxyIndex = tableManager->getProxyModel()->mapFromSource(model->index(0, 1));
+            if (currentTable == "users") {
+                model->setData(model->index(0, 4), "student");
+            }
 
-        ui->tableView->scrollToTop();
-        ui->tableView->setCurrentIndex(proxyIndex);
-        ui->tableView->edit(proxyIndex); // Сразу открываем поле для ввода
+            QModelIndex proxyIndex = tableManager->getProxyModel()->mapFromSource(model->index(0, 1));
+
+            ui->tableView->scrollToTop();
+            ui->tableView->setCurrentIndex(proxyIndex);
+            ui->tableView->edit(proxyIndex); // Сразу открываем поле для ввода
         }
 
         ui->tableView->setSortingEnabled(true);

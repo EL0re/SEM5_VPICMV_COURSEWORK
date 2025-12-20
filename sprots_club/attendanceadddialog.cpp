@@ -1,5 +1,8 @@
 #include "attendanceadddialog.h"
 #include <QDebug>
+#include <QSqlQuery>
+#include <QSqlError>
+#include <QMessageBox>
 
 AttendanceAddDialog::AttendanceAddDialog(QWidget *parent) : QDialog(parent) {
     setWindowTitle("Добавление записей посещаемости");
@@ -93,13 +96,70 @@ void AttendanceAddDialog::onCancelClicked() {
 void AttendanceAddDialog::onSaveClicked() {
     QString groupName = groupLineEdit->text().trimmed();
     QDate selectedDate = calendar->selectedDate();
+    // SQLite ожидает формат YYYY-MM-DD для типа DATE
+    QString dateStr = selectedDate.toString("yyyy-MM-dd");
 
     if (groupName.isEmpty()) {
-        qDebug() << "Ошибка: Группа не введена";
+        QMessageBox::warning(this, "Внимание", "Пожалуйста, введите название группы.");
         return;
     }
 
-    qDebug() << "Сохранение: Группа =" << groupName << "Дата =" << selectedDate.toString("dd.MM.yyyy");
+    QSqlQuery query;
+    // 1. Поиск ID группы
+    query.prepare("SELECT id FROM groups WHERE name = ?");
+    query.addBindValue(groupName);
 
-    accept();
+    if (!query.exec() || !query.next()) {
+        QMessageBox::warning(this, "Ошибка", "Группа не найдена.");
+        return;
+    }
+    int groupId = query.value(0).toInt();
+
+    // 2. Получение списка учеников
+    query.prepare("SELECT student_id FROM group_students WHERE group_id = ?");
+    query.addBindValue(groupId);
+    if (!query.exec()) return;
+
+    QList<int> studentIds;
+    while (query.next()) studentIds.append(query.value(0).toInt());
+
+    if (studentIds.isEmpty()) {
+        QMessageBox::information(this, "Информация", "В группе нет учеников.");
+        return;
+    }
+
+    QSqlDatabase db = QSqlDatabase::database();
+    db.transaction();
+
+    for (int studentId : studentIds) {
+        // ПРОВЕРКА: используем имя колонки lesson_date
+        QSqlQuery checkQuery;
+        checkQuery.prepare("SELECT id FROM attendance WHERE student_id = ? AND group_id = ? AND lesson_date = ?");
+        checkQuery.addBindValue(studentId);
+        checkQuery.addBindValue(groupId);
+        checkQuery.addBindValue(dateStr);
+
+        if (checkQuery.exec() && checkQuery.next()) continue;
+
+        // ВСТАВКА: колонки lesson_date и status ('absent' по умолчанию, так как 0 не пройдет CHECK)
+        QSqlQuery insertQuery;
+        insertQuery.prepare("INSERT INTO attendance (student_id, group_id, lesson_date, status) "
+                            "VALUES (?, ?, ?, ?)");
+        insertQuery.addBindValue(studentId);
+        insertQuery.addBindValue(groupId);
+        insertQuery.addBindValue(dateStr);
+        insertQuery.addBindValue("absent"); // Ставим 'absent' вместо 0
+
+        if (!insertQuery.exec()) {
+            db.rollback();
+            qDebug() << "SQL Error:" << insertQuery.lastError().text();
+            QMessageBox::critical(this, "Ошибка", "Ошибка при создании записи: " + insertQuery.lastError().text());
+            return;
+        }
+    }
+
+    if (db.commit()) {
+        QMessageBox::information(this, "Успех", "Список посещаемости сформирован.");
+        accept();
+    }
 }
