@@ -34,6 +34,7 @@ private slots:
     void on_logoutButton_clicked();
     void on_addButton_clicked();
     void on_anySearchField_changed();
+    void on_exportButton_clicked();
 
 
 private:

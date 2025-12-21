@@ -10,6 +10,11 @@
 #include "attendanceadddialog.h"
 #include "studentsortproxymodel.h"
 #include <QSqlRecord>
+#include <QFileDialog>
+#include <QTextStream>
+#include <QStandardPaths>
+#include <QDateTime>
+#include <QFile>
 
 MainWindow::MainWindow(const QString &fullName, QWidget *parent) :
     QMainWindow(parent),
@@ -174,6 +179,101 @@ void MainWindow::on_pushButton_3_clicked() { // РАСПИСАНИЕ
 void MainWindow::on_pushButton_4_clicked() { // ПОСЕЩАЕМОСТЬ
     switchToTable("attendance", "Посещаемость");
     updateUI(true, true, true, false, "Ученик", "Дата", "Группа", "");
+}
+
+void MainWindow::on_exportButton_clicked()
+{
+    // 1. Получаем доступ к прокси-модели (в ней отфильтрованные данные)
+    auto proxy = tableManager->getProxyModel();
+    if (!proxy || proxy->rowCount() == 0) {
+        QMessageBox::warning(this, "Экспорт", "Нет данных для экспорта.");
+        return;
+    }
+
+    // 2. Формируем имя файла по умолчанию
+    QString dateStamp = QDate::currentDate().toString("yyyy-MM-dd");
+    QString defaultName = QString("Export_%1.csv").arg(dateStamp);
+
+    // 3. Открываем диалог выбора пути
+    QString filePath = QFileDialog::getSaveFileName(this,
+        "Сохранить отчет",
+        QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/" + defaultName,
+        "CSV файлы (*.csv);;Все файлы (*.*)");
+
+    if (filePath.isEmpty()) return;
+
+    // 4. Создаем и открываем файл
+    QFile file(filePath);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QMessageBox::critical(this, "Ошибка", "Не удалось создать файл.");
+        return;
+    }
+
+    QTextStream out(&file);
+    // BOM для корректного открытия кириллицы в Excel
+    out.setGenerateByteOrderMark(true);
+    out.setCodec("UTF-8");
+
+    // Используем точку с запятой (стандарт для Excel в РФ)
+    QString sep = ";";
+
+    // 5. Пишем заголовки колонок
+    QStringList headers;
+    for (int col = 0; col < proxy->columnCount(); ++col) {
+        if (!ui->tableView->isColumnHidden(col)) {
+            headers << proxy->headerData(col, Qt::Horizontal).toString();
+        }
+    }
+    out << headers.join(sep) << "\n";
+
+    // 6. Проходим по строкам (только видимым после фильтрации)
+    for (int row = 0; row < proxy->rowCount(); ++row) {
+
+        // Проверка на пустую техническую строку
+        bool hasData = false;
+            // Проверяем хотя бы колонку с ФИО (1) или Датой (3)
+        if (!proxy->data(proxy->index(row, 1)).toString().isEmpty() || !proxy->data(proxy->index(row, 3)).toString().isEmpty()) {
+            hasData = true;
+        }
+        if (!hasData) continue;
+
+        QStringList rowData;
+        for (int col = 0; col < proxy->columnCount(); ++col) {
+            if (ui->tableView->isColumnHidden(col)) continue;
+
+            QModelIndex idx = proxy->index(row, col);
+            QString val;
+
+            if (currentTable == "attendance" && col == 4) {
+                // Получаем строковое значение из модели (как мы увидели в логах)
+                QString status = proxy->data(idx, Qt::EditRole).toString().toLower();
+
+                // Если статус равен "present", пишем "Присутствовал", иначе "Отсутствовал"
+                if (status == "present") {
+                    val = "Присутствовал";
+                } else {
+                    val = "Отсутствовал";
+                }
+            }
+            else if (currentTable == "attendance" && col == 3) {
+                // Решение проблемы ###### в Excel: добавляем апостроф
+                val = "'" + proxy->data(idx, Qt::DisplayRole).toString();
+            }
+            else {
+                val = proxy->data(idx, Qt::DisplayRole).toString();
+            }
+
+            // Стандартное экранирование CSV
+            if (val.contains(sep) || val.contains("\"") || val.contains("\n")) {
+                val = "\"" + val.replace("\"", "\"\"") + "\"";
+            }
+            rowData << val;
+        }
+        out << rowData.join(sep) << "\n";
+    }
+
+    file.close();
+    QMessageBox::information(this, "Завершено", "Данные успешно сохранены в файл:\n" + filePath);
 }
 
 void MainWindow::on_addButton_clicked() {
