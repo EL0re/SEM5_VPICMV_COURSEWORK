@@ -283,7 +283,7 @@ void MainWindow::on_delButton_clicked() {
 
     if (success && db.commit()) {
         model->select();
-        ensureTrailingEmptyRow();
+//        ensureTrailingEmptyRow();
     } else {
         db.rollback();
         QMessageBox::critical(this, "Ошибка", "Не удалось удалить записи: " + query.lastError().text());
@@ -323,7 +323,7 @@ bool MainWindow::isRowFilled(int row) const {
 
 void MainWindow::reloadview() {
     ui->tableView->resizeColumnsToContents();
-    ensureTrailingEmptyRow();
+//    ensureTrailingEmptyRow();
     ui->tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 }
 
