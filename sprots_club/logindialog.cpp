@@ -9,8 +9,7 @@ logindialog::logindialog(QWidget *parent)
     , ui(new Ui::logindialog)
 {
     ui->setupUi(this);
-    connect(ui->loginBtn, &QPushButton::clicked,
-            this, &logindialog::tryLogin);
+    connect(ui->loginBtn, &QPushButton::clicked, this, &logindialog::tryLogin);
 }
 
 logindialog::~logindialog()
@@ -18,7 +17,8 @@ logindialog::~logindialog()
     delete ui;
 }
 
-void logindialog::tryLogin() {
+void logindialog::tryLogin()
+{
     QString login = ui->loginEdit->text().trimmed();
     QString pass  = ui->passEdit->text().trimmed();
 
@@ -43,10 +43,12 @@ void logindialog::tryLogin() {
 
     if (q.next()) {
         m_fullName = q.value(0).toString();
-        m_role     = q.value(1).toString();
+        m_role = q.value(1).toString();
         m_username = login;
         accept();
-    } else {
+    }
+    else
+    {
         QMessageBox::warning(this, "Ошибка", "Неверный логин или пароль.");
     }
 }
