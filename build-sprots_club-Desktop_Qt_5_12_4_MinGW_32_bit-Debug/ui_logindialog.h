@@ -93,7 +93,7 @@ public:
 
     void retranslateUi(QWidget *logindialog)
     {
-        logindialog->setWindowTitle(QApplication::translate("logindialog", "Form", nullptr));
+        logindialog->setWindowTitle(QApplication::translate("logindialog", "\320\222\321\205\320\276\320\264 \320\262 \321\201\320\270\321\201\321\202\320\265\320\274\321\203", nullptr));
         loginBtn->setText(QApplication::translate("logindialog", "\320\222\320\236\320\231\320\242\320\230", nullptr));
         login_label->setText(QApplication::translate("logindialog", "\320\233\320\236\320\223\320\230\320\235", nullptr));
         pass_label->setText(QApplication::translate("logindialog", "\320\237\320\220\320\240\320\236\320\233\320\254", nullptr));

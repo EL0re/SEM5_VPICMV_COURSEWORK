@@ -331,7 +331,7 @@ public:
 
     void retranslateUi(QMainWindow *MainWindow)
     {
-        MainWindow->setWindowTitle(QApplication::translate("MainWindow", "MainWindow", nullptr));
+        MainWindow->setWindowTitle(QApplication::translate("MainWindow", "\320\220\320\264\320\274\320\270\320\275\320\270\321\201\321\202\321\200\320\270\321\200\320\276\320\262\320\260\320\275\320\270\320\265", nullptr));
         pushButton->setText(QApplication::translate("MainWindow", "\320\223\320\240\320\243\320\237\320\237\320\253", nullptr));
         pushButton_2->setText(QApplication::translate("MainWindow", "\320\237\320\236\320\233\320\254\320\227\320\236\320\222\320\220\320\242\320\225\320\233\320\230", nullptr));
         logoutButton->setText(QApplication::translate("MainWindow", "\320\222\320\253\320\231\320\242\320\230", nullptr));
