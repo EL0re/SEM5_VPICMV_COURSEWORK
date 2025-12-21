@@ -35,6 +35,7 @@ private slots:
     void on_addButton_clicked();
     void on_anySearchField_changed();
     void on_exportButton_clicked();
+    void on_importButton_clicked();
 
 
 private:
@@ -52,6 +53,8 @@ private:
     bool isRowFilled(int row) const;
     void reloadview();
     void commitLastRow();
+    bool validateTime(const QString &time);
+    bool validateDate(const QString &date);
     void updateUI(bool s1, bool s2, bool f1, bool f2, const QString &ps1, const QString &ps2, const QString &pf1, const QString &pf2);
 };
 

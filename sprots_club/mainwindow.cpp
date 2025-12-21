@@ -15,6 +15,8 @@
 #include <QStandardPaths>
 #include <QDateTime>
 #include <QFile>
+#include <QDate>
+#include <QTime>
 
 MainWindow::MainWindow(const QString &fullName, QWidget *parent) :
     QMainWindow(parent),
@@ -274,6 +276,120 @@ void MainWindow::on_exportButton_clicked()
 
     file.close();
     QMessageBox::information(this, "Завершено", "Данные успешно сохранены в файл:\n" + filePath);
+}
+
+
+bool MainWindow::validateTime(const QString &time) {
+    return QTime::fromString(time, "HH:mm").isValid();
+}
+
+// Вспомогательная функция для проверки даты yyyy-MM-dd
+bool MainWindow::validateDate(const QString &date) {
+    return QDate::fromString(date, "yyyy-MM-dd").isValid();
+}
+
+void MainWindow::on_importButton_clicked() {
+    QString filePath = QFileDialog::getOpenFileName(this, "Открыть CSV для импорта", "", "CSV файлы (*.csv)");
+    if (filePath.isEmpty()) return;
+
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QMessageBox::critical(this, "Ошибка", "Не удалось открыть файл.");
+        return;
+    }
+
+    QTextStream in(&file);
+    in.setGenerateByteOrderMark(true);
+    in.setCodec("UTF-8");
+
+    QStringList lines;
+    while (!in.atEnd()) {
+        QString line = in.readLine().trimmed();
+        if (!line.isEmpty()) lines.append(line);
+    }
+    file.close();
+
+    if (lines.size() < 2) return;
+    lines.takeFirst(); // Пропуск заголовков
+
+    auto normalizeTime = [](QString t) -> QString {
+        QTime time = QTime::fromString(t.trimmed(), "H:mm");
+        if (!time.isValid()) time = QTime::fromString(t.trimmed(), "HH:mm");
+        return time.isValid() ? time.toString("HH:mm") : t.trimmed();
+    };
+
+    QString sep = ";";
+    QList<QStringList> rowsToProcess;
+
+    // Предварительная очистка
+    for (const QString &line : lines) {
+        QStringList cols = line.split(sep);
+        for (QString &s : cols) {
+            s = s.trimmed();
+            if (s.startsWith("\"") && s.endsWith("\"")) s = s.mid(1, s.size()-2).replace("\"\"", "\"");
+        }
+        rowsToProcess.append(cols);
+    }
+
+    QSqlDatabase::database().transaction();
+    int added = 0, skipped = 0;
+
+    for (const QStringList &cols : rowsToProcess) {
+        QSqlQuery ins;
+        if (currentTable == "schedule") {
+            if (cols.size() < 4) continue;
+
+            QSqlQuery q; q.prepare("SELECT id FROM groups WHERE name = ?");
+            q.addBindValue(cols[0]); q.exec(); q.next();
+            int gId = q.value(0).toInt();
+
+            QString day   = cols[1];
+            QString start = normalizeTime(cols[2]);
+            QString end   = normalizeTime(cols[3]);
+            QString hall  = cols.value(4);
+
+            QSqlQuery ck;
+            ck.prepare("SELECT id FROM schedule WHERE group_id=? AND day_of_week=? AND start_time=? AND hall=?");
+            ck.addBindValue(gId); ck.addBindValue(day); ck.addBindValue(start); ck.addBindValue(hall);
+            ck.exec();
+
+            if (ck.next()) { skipped++; continue; }
+
+            ins.prepare("INSERT INTO schedule (group_id, day_of_week, start_time, end_time, hall) VALUES (?, ?, ?, ?, ?)");
+            ins.addBindValue(gId); ins.addBindValue(day); ins.addBindValue(start); ins.addBindValue(end); ins.addBindValue(hall);
+        }
+        else if (currentTable == "attendance") {
+            if (cols.size() < 4) continue;
+
+            QSqlQuery q; q.prepare("SELECT id FROM users WHERE full_name = ? AND role = 'student'");
+            q.addBindValue(cols[0]); q.exec(); q.next();
+            int uId = q.value(0).toInt();
+
+            q.prepare("SELECT id FROM groups WHERE name = ?");
+            q.addBindValue(cols[1]); q.exec(); q.next();
+            int gId = q.value(0).toInt();
+
+            QString date = cols[2];
+            if (date.startsWith("'")) date.remove(0, 1);
+
+            QSqlQuery ck;
+            ck.prepare("SELECT id FROM attendance WHERE student_id=? AND group_id=? AND lesson_date=?");
+            ck.addBindValue(uId); ck.addBindValue(gId); ck.addBindValue(date);
+            ck.exec();
+            if (ck.next()) { skipped++; continue; }
+
+            QString st = cols[3].toLower();
+            QString dbSt = (st=="present" || st=="1" || st=="+" || st=="присутствовал") ? "present" : "absent";
+
+            ins.prepare("INSERT INTO attendance (student_id, group_id, lesson_date, status) VALUES (?, ?, ?, ?)");
+            ins.addBindValue(uId); ins.addBindValue(gId); ins.addBindValue(date); ins.addBindValue(dbSt);
+        }
+        if (ins.exec()) added++;
+    }
+
+    QSqlDatabase::database().commit();
+    tableManager->getModel()->select();
+    QMessageBox::information(this, "Импорт", QString("Добавлено: %1, Дубликатов: %2").arg(added).arg(skipped));
 }
 
 void MainWindow::on_addButton_clicked() {
