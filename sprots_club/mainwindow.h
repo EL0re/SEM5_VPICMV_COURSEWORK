@@ -5,6 +5,7 @@
 #include <QString>
 #include <QModelIndex>
 #include "tablemanager.h"
+#include <QDate>
 
 namespace Ui {
 class MainWindow;
@@ -19,6 +20,7 @@ protected:
 
 public:
     explicit MainWindow(const QString &fullName, QWidget *parent = nullptr);
+    void onModelDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight);
     ~MainWindow();
 
     bool logoutRequested = false;
@@ -32,7 +34,7 @@ private slots:
     void on_logoutButton_clicked();
     void on_addButton_clicked();
     void on_anySearchField_changed();
-    void onModelDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight);
+
 
 private:
     Ui::MainWindow *ui;

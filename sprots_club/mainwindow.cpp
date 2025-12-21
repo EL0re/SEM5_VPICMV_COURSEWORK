@@ -337,21 +337,21 @@ void MainWindow::reloadview() {
 }
 
 void MainWindow::onModelDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight) {
-    auto model = tableManager->getModel();
+    auto model = qobject_cast<QSqlRelationalTableModel*>(tableManager->getModel());
     if (!model || !model->isDirty()) return;
 
     int row = topLeft.row();
     int col = topLeft.column();
 
-    // Блокируем сигналы, чтобы наши манипуляции не вызывали рекурсию
+    // Блокируем сигналы для предотвращения рекурсии при автоматической подстановке ID
     model->blockSignals(true);
 
-    // Обработка Тренера в Группах
+    // 1. ПРЕОБРАЗОВАНИЕ ТЕКСТА В ID
     if (currentTable == "groups" && col == 3) {
         QString val = model->index(row, 3).data(Qt::DisplayRole).toString();
         bool isNumeric;
         val.toInt(&isNumeric);
-        if (!isNumeric) { // Если в ячейке текст, а не ID
+        if (!isNumeric) {
             QSqlQuery query;
             query.prepare("SELECT id FROM users WHERE full_name = :name AND role = 'trainer'");
             query.bindValue(":name", val);
@@ -360,7 +360,6 @@ void MainWindow::onModelDataChanged(const QModelIndex &topLeft, const QModelInde
             }
         }
     }
-    // Обработка Группы в Расписании
     else if (currentTable == "schedule" && col == 1) {
         QString val = model->index(row, 1).data(Qt::DisplayRole).toString();
         bool isNumeric;
@@ -377,9 +376,10 @@ void MainWindow::onModelDataChanged(const QModelIndex &topLeft, const QModelInde
 
     model->blockSignals(false);
 
-    // Определение лимита для сохранения
+    // 2. ОПРЕДЕЛЕНИЕ ГРАНИЦ ЗАПОЛНЕННОСТИ
     int lastRequiredCol = 3;
     if (currentTable == "schedule") lastRequiredCol = 5;
+    else if (currentTable == "attendance") lastRequiredCol = 4;
 
     bool allFilled = true;
     for (int i = 1; i <= lastRequiredCol; ++i) {
@@ -389,12 +389,100 @@ void MainWindow::onModelDataChanged(const QModelIndex &topLeft, const QModelInde
         }
     }
 
+    // Если строка заполнена, выполняем валидацию
     if (allFilled) {
+
+        // --- ПРОВЕРКА ДЛЯ ТАБЛИЦЫ ГРУПП (Уникальность названия) ---
+        if (currentTable == "groups") {
+            int currentId = model->index(row, 0).data().toInt();
+            QString groupName = model->index(row, 1).data().toString().trimmed();
+
+            QSqlQuery checkName;
+            checkName.prepare("SELECT id FROM groups WHERE name = :name AND id != :id");
+            checkName.bindValue(":name", groupName);
+            checkName.bindValue(":id", currentId);
+
+            if (checkName.exec() && checkName.next()) {
+                QMessageBox::warning(this, "Дубликат", QString("Группа с названием '%1' уже существует!").arg(groupName));
+                model->revertAll();
+                return;
+            }
+        }
+
+        // --- ПРОВЕРКИ ДЛЯ ТАБЛИЦЫ РАСПИСАНИЯ ---
+        if (currentTable == "schedule") {
+            int currentId = model->index(row, 0).data().toInt();
+            int groupId = model->index(row, 1).data(Qt::EditRole).toInt();
+            QString day = model->index(row, 2).data().toString().trimmed();
+            QString start = model->index(row, 3).data().toString().trimmed();
+            QString end = model->index(row, 4).data().toString().trimmed();
+            QString hall = model->index(row, 5).data().toString().trimmed();
+
+            // Проверка логики времени
+            if (start >= end) {
+                QMessageBox::warning(this, "Ошибка времени", "Время начала занятия должно быть раньше времени окончания!");
+                model->revertAll();
+                return;
+            }
+
+            // ПРОВЕРКА 1: Конфликт по залу
+            QSqlQuery qHall;
+            qHall.prepare(
+                "SELECT g.name FROM schedule s "
+                "JOIN groups g ON s.group_id = g.id "
+                "WHERE s.day_of_week = :day AND s.hall = :hall AND s.id != :id "
+                "AND (time(:start) < time(s.end_time) AND time(:end) > time(s.start_time))"
+            );
+            qHall.bindValue(":day", day);
+            qHall.bindValue(":hall", hall);
+            qHall.bindValue(":start", start);
+            qHall.bindValue(":end", end);
+            qHall.bindValue(":id", currentId);
+
+            if (qHall.exec() && qHall.next()) {
+                QMessageBox::critical(this, "Конфликт зала",
+                    QString("Зал '%1' уже занят в это время группой: %2").arg(hall, qHall.value(0).toString()));
+                model->revertAll();
+                return;
+            }
+
+            // ПРОВЕРКА 2: Конфликт по тренеру
+            QSqlQuery qGetT;
+            qGetT.prepare("SELECT trainer_id FROM groups WHERE id = :gid");
+            qGetT.bindValue(":gid", groupId);
+
+            if (qGetT.exec() && qGetT.next()) {
+                int trainerId = qGetT.value(0).toInt();
+
+                QSqlQuery qTr;
+                qTr.prepare(
+                    "SELECT g.name FROM schedule s "
+                    "JOIN groups g ON s.group_id = g.id "
+                    "WHERE s.day_of_week = :day AND g.trainer_id = :tid AND s.id != :id "
+                    "AND (time(:start) < time(s.end_time) AND time(:end) > time(s.start_time))"
+                );
+                qTr.bindValue(":day", day);
+                qTr.bindValue(":tid", trainerId);
+                qTr.bindValue(":start", start);
+                qTr.bindValue(":end", end);
+                qTr.bindValue(":id", currentId);
+
+                if (qTr.exec() && qTr.next()) {
+                    QMessageBox::critical(this, "Конфликт тренера",
+                        QString("Выбранный тренер в это время ведет занятие у группы: %1").arg(qTr.value(0).toString()));
+                    model->revertAll();
+                    return;
+                }
+            }
+        }
+
+        // Если все проверки пройдены, сохраняем изменения в базу
         if (model->submitAll()) {
-            // МГНОВЕННОЕ ОБНОВЛЕНИЕ
             model->select();
-            // Скрываем ID и возвращаем делегаты
+            // Скрываем ID и восстанавливаем делегаты
             setupDelegatesForCurrentTable();
+        } else {
+            qDebug() << "Ошибка сохранения данных:" << model->lastError().text();
         }
     }
 }

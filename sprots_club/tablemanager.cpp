@@ -1,5 +1,6 @@
 #include "tablemanager.h"
 #include "studentsortproxymodel.h"
+#include "mainwindow.h"
 #include <QRegularExpression>
 #include <QSqlDatabase>
 #include <QApplication>
@@ -24,6 +25,12 @@ void TableManager::setupTable(const QString &tableName, QTableView *view) {
     if (proxyModel) { proxyModel->deleteLater(); proxyModel = nullptr; }
 
     model = new QSqlRelationalTableModel(this, QSqlDatabase::database());
+
+    MainWindow* mw = qobject_cast<MainWindow*>(this->parent());
+    if (mw) {
+            // Теперь компилятор разрешит это, так как метод стал публичным
+        connect(model, &QSqlRelationalTableModel::dataChanged, mw, &MainWindow::onModelDataChanged);
+    }
     model->setTable(tableName);
 
     // 2. Настройка связей (Relations)

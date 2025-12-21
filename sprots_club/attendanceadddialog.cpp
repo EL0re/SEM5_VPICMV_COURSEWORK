@@ -96,7 +96,6 @@ void AttendanceAddDialog::onCancelClicked() {
 void AttendanceAddDialog::onSaveClicked() {
     QString groupName = groupLineEdit->text().trimmed();
     QDate selectedDate = calendar->selectedDate();
-    // SQLite ожидает формат YYYY-MM-DD для типа DATE
     QString dateStr = selectedDate.toString("yyyy-MM-dd");
 
     if (groupName.isEmpty()) {
@@ -115,6 +114,43 @@ void AttendanceAddDialog::onSaveClicked() {
     }
     int groupId = query.value(0).toInt();
 
+    // --- НОВАЯ ЛОГИКА: ПРОВЕРКА РАСПИСАНИЯ ---
+
+    // 1. Проверяем, есть ли у группы расписание вообще
+    QSqlQuery checkSched;
+    checkSched.prepare("SELECT COUNT(*) FROM schedule WHERE group_id = ?");
+    checkSched.addBindValue(groupId);
+    if (checkSched.exec() && checkSched.next()) {
+        if (checkSched.value(0).toInt() == 0) {
+            QMessageBox::warning(this, "Ошибка",
+                QString("У группы '%1' не заполнено расписание.\nДобавьте занятия в таблицу 'Расписание' перед созданием посещаемости.").arg(groupName));
+            return;
+        }
+    }
+
+    // 2. Получаем день недели из календаря и сопоставляем с БД
+    // QDate::dayOfWeek(): 1 = Понедельник, ..., 7 = Воскресенье
+    static const QStringList daysRu = {"", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"};
+    QString selectedDayName = daysRu.at(selectedDate.dayOfWeek());
+
+    QSqlQuery checkDay;
+    checkDay.prepare("SELECT id FROM schedule WHERE group_id = ? AND day_of_week = ?");
+    checkDay.addBindValue(groupId);
+    checkDay.addBindValue(selectedDayName);
+
+    if (!checkDay.exec()) {
+        QMessageBox::critical(this, "Ошибка БД", "Не удалось проверить день недели в расписании.");
+        return;
+    }
+
+    if (!checkDay.next()) {
+        QMessageBox::warning(this, "Неверная дата",
+            QString("Выбранная дата (%1) — это %2.\nВ расписании группы '%3' в этот день занятий нет.")
+            .arg(selectedDate.toString("dd.MM.yyyy"), selectedDayName, groupName));
+        return;
+    }
+    // --- КОНЕЦ НОВОЙ ЛОГИКИ ---
+
     // 2. Получение списка учеников
     query.prepare("SELECT student_id FROM group_students WHERE group_id = ?");
     query.addBindValue(groupId);
@@ -132,7 +168,6 @@ void AttendanceAddDialog::onSaveClicked() {
     db.transaction();
 
     for (int studentId : studentIds) {
-        // ПРОВЕРКА: используем имя колонки lesson_date
         QSqlQuery checkQuery;
         checkQuery.prepare("SELECT id FROM attendance WHERE student_id = ? AND group_id = ? AND lesson_date = ?");
         checkQuery.addBindValue(studentId);
@@ -141,14 +176,13 @@ void AttendanceAddDialog::onSaveClicked() {
 
         if (checkQuery.exec() && checkQuery.next()) continue;
 
-        // ВСТАВКА: колонки lesson_date и status ('absent' по умолчанию, так как 0 не пройдет CHECK)
         QSqlQuery insertQuery;
         insertQuery.prepare("INSERT INTO attendance (student_id, group_id, lesson_date, status) "
                             "VALUES (?, ?, ?, ?)");
         insertQuery.addBindValue(studentId);
         insertQuery.addBindValue(groupId);
         insertQuery.addBindValue(dateStr);
-        insertQuery.addBindValue("absent"); // Ставим 'absent' вместо 0
+        insertQuery.addBindValue("absent");
 
         if (!insertQuery.exec()) {
             db.rollback();
