@@ -13,27 +13,25 @@
 #include <QSortFilterProxyModel>
 
 
-// Прокси-модель для реализации логики "Выбранные всегда сверху"
 class StudentSortProxyModel : public QSortFilterProxyModel {
     Q_OBJECT
 public:
-    explicit StudentSortProxyModel(QObject *parent = nullptr) : QSortFilterProxyModel(parent) {
-        // Устанавливаем роль, по которой будет идти динамическая сортировка
+    explicit StudentSortProxyModel(QObject *parent = nullptr) : QSortFilterProxyModel(parent)
+    {
         setSortRole(Qt::CheckStateRole);
     }
 
 protected:
-    bool lessThan(const QModelIndex &source_left, const QModelIndex &source_right) const {
-        // Получаем состояние чекбоксов из колонки 1
+    bool lessThan(const QModelIndex &source_left, const QModelIndex &source_right) const
+    {
         int leftState = sourceModel()->data(sourceModel()->index(source_left.row(), 1), Qt::CheckStateRole).toInt();
         int rightState = sourceModel()->data(sourceModel()->index(source_right.row(), 1), Qt::CheckStateRole).toInt();
 
-        // Если состояния разные (один выбран, другой нет)
-        if (leftState != rightState) {
+        if (leftState != rightState)
+        {
             return leftState < rightState;
         }
 
-        // Если состояния одинаковые, сортируем по алфавиту (колонка 0)
         QString leftName = sourceModel()->data(sourceModel()->index(source_left.row(), 0), Qt::DisplayRole).toString();
         QString rightName = sourceModel()->data(sourceModel()->index(source_right.row(), 0), Qt::DisplayRole).toString();
 
@@ -46,7 +44,6 @@ class EditGroupStudentsDialog : public QDialog {
 public:
     explicit EditGroupStudentsDialog(int groupId, const QString &groupName, QWidget *parent = nullptr);
 
-    // Возвращает список ID студентов, у которых стоит галочка
     QList<int> getSelectedStudentIds() const;
 
 private slots:

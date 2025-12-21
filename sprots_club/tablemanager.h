@@ -44,7 +44,7 @@ signals:
     void buttonClicked(const QModelIndex &index);
 };
 
-// Делегат для чекбокса (present/absent) в таблице Посещаемость
+
 class CheckBoxDelegate : public QStyledItemDelegate {
     Q_OBJECT
 public:
@@ -63,8 +63,7 @@ public:
     QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &, const QModelIndex &) const override {
         QComboBox *editor = new QComboBox(parent);
 
-        // Загружаем и ФИО, и ID в ComboBox
-        // UserRole будет хранить ID, а DisplayRole — ФИО
+
         QString sql = QString("SELECT id, %1 FROM %2").arg(m_displayCol, m_table);
         if (!m_filter.isEmpty()) sql += " WHERE " + m_filter;
 
@@ -85,10 +84,9 @@ public:
         QComboBox *comboBox = static_cast<QComboBox*>(editor);
         int currentIdx = comboBox->currentIndex();
 
-        if (currentIdx >= 0) {
-            // Берем скрытый ID из ComboBox
+        if (currentIdx >= 0)
+        {
             QVariant id = comboBox->itemData(currentIdx);
-            // Записываем ID (число) в модель. Теперь модель не очистит поле!
             model->setData(index, id, Qt::EditRole);
         }
     }
@@ -106,10 +104,10 @@ public:
             : QSortFilterProxyModel(parent) {}
     QMap<int, QString> columnFilters;
 
-    // Добавляем этот публичный метод
-    void setColumnFilters(const QMap<int, QString> &filters) {
+    void setColumnFilters(const QMap<int, QString> &filters)
+    {
         columnFilters = filters;
-        invalidateFilter(); // Здесь вызов разрешен, так как это внутри класса
+        invalidateFilter();
     }
 
 protected:
@@ -162,7 +160,7 @@ private:
     QStringList m_items;
 };
 
-// 2. Делегат для выбора времени (TIME)
+
 class TimeEditDelegate : public QItemDelegate {
     Q_OBJECT
 public:
@@ -170,7 +168,7 @@ public:
 
     QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &, const QModelIndex &) const override {
         QTimeEdit *editor = new QTimeEdit(parent);
-        editor->setDisplayFormat("HH:mm"); // Формат без секунд для удобства
+        editor->setDisplayFormat("HH:mm");
         return editor;
     }
 
