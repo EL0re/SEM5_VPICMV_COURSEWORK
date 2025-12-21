@@ -1,10 +1,14 @@
 #include "studentsortproxymodel.h"
-
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QHeaderView>
 #include <QDebug>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QLabel>
 
+/* полная настройка кодом(лучше бы ui сделал) модального окна для ученик-группа, зато
+ * как в отчете. */
 EditGroupStudentsDialog::EditGroupStudentsDialog(int groupId, const QString &groupName, QWidget *parent)
     : QDialog(parent), m_groupId(groupId)
 {
@@ -12,19 +16,16 @@ EditGroupStudentsDialog::EditGroupStudentsDialog(int groupId, const QString &gro
     setModal(true);
     setMinimumSize(600, 500);
 
-    // Общий фон диалога
     setStyleSheet("QDialog { background-color: #ffffff; }");
 
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(20, 20, 20, 20);
     mainLayout->setSpacing(15);
 
-    // 1. Заголовок окна
     QLabel *titleLabel = new QLabel(QString("Состав группы: %1").arg(groupName), this);
     titleLabel->setStyleSheet("font-size: 18px; font-weight: bold; color: #333; margin-bottom: 5px;");
     mainLayout->addWidget(titleLabel);
 
-    // 2. Панель поиска
     QHBoxLayout *topPanel = new QHBoxLayout();
     QLabel *subTitle = new QLabel("Ученики", this);
     subTitle->setStyleSheet("font-size: 14px; font-weight: bold; color: #666;");
@@ -33,7 +34,6 @@ EditGroupStudentsDialog::EditGroupStudentsDialog(int groupId, const QString &gro
     m_searchEdit->setPlaceholderText("Поиск по ФИО...");
     m_searchEdit->setFixedWidth(250);
 
-    // ПРИМЕНЯЕМ ВАШ СТИЛЬ
     m_searchEdit->setStyleSheet(
         "QLineEdit {"
         "    background-color: #f0f0f0;"
@@ -54,7 +54,6 @@ EditGroupStudentsDialog::EditGroupStudentsDialog(int groupId, const QString &gro
     topPanel->addWidget(m_searchEdit);
     mainLayout->addLayout(topPanel);
 
-    // 3. Таблица
     m_view = new QTableView(this);
     m_model = new QStandardItemModel(this);
     m_model->setHorizontalHeaderLabels({"ФИО", ""});
@@ -78,12 +77,10 @@ EditGroupStudentsDialog::EditGroupStudentsDialog(int groupId, const QString &gro
 
     mainLayout->addWidget(m_view);
 
-    // 4. Кнопки управления (Исправленный стиль)
     QHBoxLayout *btnLayout = new QHBoxLayout();
     QPushButton *cancelBtn = new QPushButton("Отмена", this);
     QPushButton *saveBtn = new QPushButton("Сохранить", this);
 
-    // ВАЖНО: Указываем border явно, чтобы цвет фона (background-color) применился
     QString commonBtnStyle =
         "QPushButton {"
         "    color: #ffffff;"
@@ -110,7 +107,6 @@ EditGroupStudentsDialog::EditGroupStudentsDialog(int groupId, const QString &gro
     btnLayout->addWidget(saveBtn);
     mainLayout->addLayout(btnLayout);
 
-    // Загрузка и сигналы
     loadStudents();
 
     connect(m_searchEdit, &QLineEdit::textChanged, this, &EditGroupStudentsDialog::onSearchChanged);
@@ -121,25 +117,34 @@ EditGroupStudentsDialog::EditGroupStudentsDialog(int groupId, const QString &gro
     m_proxyModel->sort(1, Qt::DescendingOrder);
 }
 
-void EditGroupStudentsDialog::loadStudents() {
-    // Получаем текущий состав группы
+/*
+ *  Сначала ID
+   учеников, которые состоят в группе. Затем
+   выбираются все записи с ролью 'student'.Табличка с привязкой ученика к группе */
+void EditGroupStudentsDialog::loadStudents()
+{
     QList<int> currentMembers;
     QSqlQuery q;
     q.prepare("SELECT student_id FROM group_students WHERE group_id = ?");
     q.addBindValue(m_groupId);
-    if(q.exec()) {
-        while(q.next()) currentMembers.append(q.value(0).toInt());
+    if(q.exec())
+    {
+        while(q.next())
+        {
+            currentMembers.append(q.value(0).toInt());
+        }
     }
 
-    // Получаем всех учеников
     q.prepare("SELECT id, full_name FROM users WHERE role = 'student' ORDER BY full_name ASC");
-    if (q.exec()) {
-        while (q.next()) {
+    if (q.exec())
+    {
+        while (q.next())
+        {
             int id = q.value(0).toInt();
             QString name = q.value(1).toString();
 
             QStandardItem *nameItem = new QStandardItem(name);
-            nameItem->setData(id, Qt::UserRole); // Прячем ID в UserRole
+            nameItem->setData(id, Qt::UserRole);
 
             QStandardItem *checkItem = new QStandardItem();
             checkItem->setCheckable(true);
@@ -151,21 +156,29 @@ void EditGroupStudentsDialog::loadStudents() {
     m_proxyModel->sort(1, Qt::DescendingOrder);
 }
 
-void EditGroupStudentsDialog::onSearchChanged(const QString &text) {
+/* это для поиска(тип чтобы сразу обновлялась по ФИО и т д) - он тут тоже просто есть */
+void EditGroupStudentsDialog::onSearchChanged(const QString &text)
+{
     m_proxyModel->setFilterFixedString(text);
 }
 
-void EditGroupStudentsDialog::onDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight) {
-    if (topLeft.column() <= 1 && bottomRight.column() >= 1) {
-            // Принудительно просим прокси-модель пересчитать порядок строк
+/* пересортировка, чтобы отмеченных наверх кидать(удобнее смотреть потом) */
+void EditGroupStudentsDialog::onDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight)
+{
+    if (topLeft.column() <= 1 && bottomRight.column() >= 1)
+    {
         m_proxyModel->sort(1, Qt::DescendingOrder);
     }
 }
 
-QList<int> EditGroupStudentsDialog::getSelectedStudentIds() const {
+/* для сохранения(анализ у кого чекс стоит айдишку записать) */
+QList<int> EditGroupStudentsDialog::getSelectedStudentIds() const
+{
     QList<int> selectedIds;
-    for (int i = 0; i < m_model->rowCount(); ++i) {
-        if (m_model->item(i, 1)->checkState() == Qt::Checked) {
+    for (int i = 0; i < m_model->rowCount(); ++i)
+    {
+        if (m_model->item(i, 1)->checkState() == Qt::Checked)
+        {
             selectedIds.append(m_model->item(i, 0)->data(Qt::UserRole).toInt());
         }
     }

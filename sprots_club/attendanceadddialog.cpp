@@ -3,31 +3,33 @@
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QMessageBox>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QPushButton>
 
-AttendanceAddDialog::AttendanceAddDialog(QWidget *parent) : QDialog(parent) {
+/*тоже косметика для окна(пришлось под календарь цвет чутка подкорректировать) */
+AttendanceAddDialog::AttendanceAddDialog(QWidget *parent) : QDialog(parent)
+{
     setWindowTitle("Добавление записей посещаемости");
     setModal(true);
-    setMinimumSize(700, 350); // Увеличенный размер окна
+    setMinimumSize(700, 350);
 
-    // Основной вертикальный слой
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(20, 20, 20, 20);
     mainLayout->setSpacing(15);
 
-    // Стили для меток (Labels)
     QString labelStyle = "QLabel { font-size: 16px; font-weight: bold; }";
 
-    // Верхняя часть (Группа и Календарь)
     QHBoxLayout *topLayout = new QHBoxLayout();
 
-    // Левая колонка: Группа
     QVBoxLayout *groupLayout = new QVBoxLayout();
     QLabel *groupLabel = new QLabel("Группа:", this);
     groupLabel->setStyleSheet(labelStyle);
 
     groupLineEdit = new QLineEdit(this);
     groupLineEdit->setPlaceholderText("Введите название...");
-    groupLineEdit->setMinimumHeight(40); // Немного увеличим высоту для удобства
+    groupLineEdit->setMinimumHeight(40);
 
     groupLineEdit->setStyleSheet(
         "QLineEdit {"
@@ -48,7 +50,6 @@ AttendanceAddDialog::AttendanceAddDialog(QWidget *parent) : QDialog(parent) {
     groupLayout->addWidget(groupLineEdit);
     groupLayout->addStretch();
 
-    // Правая колонка: Дата
     QVBoxLayout *dateLayout = new QVBoxLayout();
     QLabel *dateLabel = new QLabel("Дата:", this);
     dateLabel->setStyleSheet(labelStyle);
@@ -62,18 +63,13 @@ AttendanceAddDialog::AttendanceAddDialog(QWidget *parent) : QDialog(parent) {
     topLayout->addLayout(groupLayout);
     topLayout->addLayout(dateLayout);
 
-    // Нижняя часть (Кнопки)
     QHBoxLayout *buttonLayout = new QHBoxLayout();
     QPushButton *cancelBtn = new QPushButton("Отмена", this);
     QPushButton *saveBtn = new QPushButton("Сохранить", this);
 
-    // Общий стиль для кнопок (размер и шрифт)
     QString baseButtonStyle = "QPushButton { font-size: 14px; font-weight: bold; min-width: 120px; min-height: 40px; color: white; border-radius: 4px; }";
 
-    // Стилизация: Отмена (Красная)
     cancelBtn->setStyleSheet(baseButtonStyle + "QPushButton { background-color: #f44336; } QPushButton:hover { background-color: #d32f2f; }");
-
-    // Стилизация: Сохранить (Синяя)
     saveBtn->setStyleSheet(baseButtonStyle + "QPushButton { background-color: #2196F3; } QPushButton:hover { background-color: #1976D2; }");
 
     buttonLayout->addWidget(cancelBtn);
@@ -84,52 +80,54 @@ AttendanceAddDialog::AttendanceAddDialog(QWidget *parent) : QDialog(parent) {
     mainLayout->addStretch();
     mainLayout->addLayout(buttonLayout);
 
-    // Соединение сигналов
     connect(cancelBtn, &QPushButton::clicked, this, &AttendanceAddDialog::onCancelClicked);
     connect(saveBtn, &QPushButton::clicked, this, &AttendanceAddDialog::onSaveClicked);
 }
 
-void AttendanceAddDialog::onCancelClicked() {
+/* отмена для окна */
+void AttendanceAddDialog::onCancelClicked()
+{
     reject();
 }
 
-void AttendanceAddDialog::onSaveClicked() {
+/* сохранение, там валидация на то есть ли группа, сходится ли день недели с датой, есть ли вообще распа и т д
+ зато потом находит всех учеников группы и создает записи с Фио, датой, группой, тока чекбокс остается отметить*/
+void AttendanceAddDialog::onSaveClicked()
+{
     QString groupName = groupLineEdit->text().trimmed();
     QDate selectedDate = calendar->selectedDate();
     QString dateStr = selectedDate.toString("yyyy-MM-dd");
 
-    if (groupName.isEmpty()) {
+    if (groupName.isEmpty())
+    {
         QMessageBox::warning(this, "Внимание", "Пожалуйста, введите название группы.");
         return;
     }
 
     QSqlQuery query;
-    // 1. Поиск ID группы
     query.prepare("SELECT id FROM groups WHERE name = ?");
     query.addBindValue(groupName);
 
-    if (!query.exec() || !query.next()) {
+    if (!query.exec() || !query.next())
+    {
         QMessageBox::warning(this, "Ошибка", "Группа не найдена.");
         return;
     }
     int groupId = query.value(0).toInt();
 
-    // --- НОВАЯ ЛОГИКА: ПРОВЕРКА РАСПИСАНИЯ ---
-
-    // 1. Проверяем, есть ли у группы расписание вообще
     QSqlQuery checkSched;
     checkSched.prepare("SELECT COUNT(*) FROM schedule WHERE group_id = ?");
     checkSched.addBindValue(groupId);
-    if (checkSched.exec() && checkSched.next()) {
-        if (checkSched.value(0).toInt() == 0) {
+    if (checkSched.exec() && checkSched.next())
+    {
+        if (checkSched.value(0).toInt() == 0)
+        {
             QMessageBox::warning(this, "Ошибка",
                 QString("У группы '%1' не заполнено расписание.\nДобавьте занятия в таблицу 'Расписание' перед созданием посещаемости.").arg(groupName));
             return;
         }
     }
 
-    // 2. Получаем день недели из календаря и сопоставляем с БД
-    // QDate::dayOfWeek(): 1 = Понедельник, ..., 7 = Воскресенье
     static const QStringList daysRu = {"", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"};
     QString selectedDayName = daysRu.at(selectedDate.dayOfWeek());
 
@@ -138,28 +136,32 @@ void AttendanceAddDialog::onSaveClicked() {
     checkDay.addBindValue(groupId);
     checkDay.addBindValue(selectedDayName);
 
-    if (!checkDay.exec()) {
+    if (!checkDay.exec())
+    {
         QMessageBox::critical(this, "Ошибка БД", "Не удалось проверить день недели в расписании.");
         return;
     }
 
-    if (!checkDay.next()) {
+    if (!checkDay.next())
+    {
         QMessageBox::warning(this, "Неверная дата",
             QString("Выбранная дата (%1) — это %2.\nВ расписании группы '%3' в этот день занятий нет.")
             .arg(selectedDate.toString("dd.MM.yyyy"), selectedDayName, groupName));
         return;
     }
-    // --- КОНЕЦ НОВОЙ ЛОГИКИ ---
 
-    // 2. Получение списка учеников
     query.prepare("SELECT student_id FROM group_students WHERE group_id = ?");
     query.addBindValue(groupId);
     if (!query.exec()) return;
 
     QList<int> studentIds;
-    while (query.next()) studentIds.append(query.value(0).toInt());
+    while (query.next())
+    {
+        studentIds.append(query.value(0).toInt());
+    }
 
-    if (studentIds.isEmpty()) {
+    if (studentIds.isEmpty())
+    {
         QMessageBox::information(this, "Информация", "В группе нет учеников.");
         return;
     }
@@ -167,7 +169,8 @@ void AttendanceAddDialog::onSaveClicked() {
     QSqlDatabase db = QSqlDatabase::database();
     db.transaction();
 
-    for (int studentId : studentIds) {
+    for (int studentId : studentIds)
+    {
         QSqlQuery checkQuery;
         checkQuery.prepare("SELECT id FROM attendance WHERE student_id = ? AND group_id = ? AND lesson_date = ?");
         checkQuery.addBindValue(studentId);
@@ -184,15 +187,16 @@ void AttendanceAddDialog::onSaveClicked() {
         insertQuery.addBindValue(dateStr);
         insertQuery.addBindValue("absent");
 
-        if (!insertQuery.exec()) {
+        if (!insertQuery.exec())
+        {
             db.rollback();
-            qDebug() << "SQL Error:" << insertQuery.lastError().text();
             QMessageBox::critical(this, "Ошибка", "Ошибка при создании записи: " + insertQuery.lastError().text());
             return;
         }
     }
 
-    if (db.commit()) {
+    if (db.commit())
+    {
         QMessageBox::information(this, "Успех", "Список посещаемости сформирован.");
         accept();
     }

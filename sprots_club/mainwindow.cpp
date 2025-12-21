@@ -2,16 +2,16 @@
 #include <QEvent>
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include <QMap>
+#include <QMap> //ключ-значения хранить
 #include <QDebug>
-#include <QSqlError>
-#include <QSqlQuery>
+#include <QSqlError> // ошибки бд
+#include <QSqlQuery> //запросы бд
 #include <QMessageBox>
 #include "attendanceadddialog.h"
 #include "studentsortproxymodel.h"
-#include <QSqlRecord>
+#include <QSqlRecord>  //записи - строки и т д
 #include <QFileDialog>
-#include <QTextStream>
+#include <QTextStream> //для csv
 #include <QStandardPaths>
 #include <QDateTime>
 #include <QFile>
