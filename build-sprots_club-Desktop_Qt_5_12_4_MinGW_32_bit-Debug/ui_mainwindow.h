@@ -43,6 +43,9 @@ public:
     QLabel *labelFilters;
     QPushButton *addButton;
     QPushButton *delButton;
+    QPushButton *importButton;
+    QLabel *slashLabel;
+    QPushButton *exportButton;
 
     void setupUi(QMainWindow *MainWindow)
     {
@@ -265,6 +268,60 @@ public:
 "QPushButton:hover {\n"
 "    background-color: #d32f2f;\n"
 "}"));
+        importButton = new QPushButton(centralWidget);
+        importButton->setObjectName(QString::fromUtf8("importButton"));
+        importButton->setGeometry(QRect(970, 20, 93, 31));
+        QFont font3;
+        font3.setPointSize(9);
+        font3.setBold(true);
+        font3.setWeight(62);
+        importButton->setFont(font3);
+        importButton->setStyleSheet(QString::fromUtf8("QPushButton {\n"
+"    background-color: #e0e0e0; \n"
+"    color: #444444;\n"
+"    border: none;\n"
+"	border-radius: 5px;\n"
+"    text-align: center; \n"
+"    font-weight: 500;\n"
+"}\n"
+"\n"
+"QPushButton:hover {\n"
+"    background-color: #d5d5d5;\n"
+"}\n"
+"\n"
+"QPushButton:checked {\n"
+"    background-color: #bdbdbd;\n"
+"    font-weight: bold;\n"
+"}"));
+        slashLabel = new QLabel(centralWidget);
+        slashLabel->setObjectName(QString::fromUtf8("slashLabel"));
+        slashLabel->setGeometry(QRect(1070, 20, 16, 31));
+        QFont font4;
+        font4.setPointSize(12);
+        font4.setBold(true);
+        font4.setWeight(75);
+        slashLabel->setFont(font4);
+        exportButton = new QPushButton(centralWidget);
+        exportButton->setObjectName(QString::fromUtf8("exportButton"));
+        exportButton->setGeometry(QRect(1090, 20, 93, 31));
+        exportButton->setFont(font3);
+        exportButton->setStyleSheet(QString::fromUtf8("QPushButton {\n"
+"    background-color: #e0e0e0; \n"
+"    color: #444444;\n"
+"    border: none;\n"
+"    border-radius: 5px;\n"
+"    text-align: center; \n"
+"    font-weight: 500;\n"
+"}\n"
+"\n"
+"QPushButton:hover {\n"
+"    background-color: #d5d5d5;\n"
+"}\n"
+"\n"
+"QPushButton:checked {\n"
+"    background-color: #bdbdbd;\n"
+"    font-weight: bold;\n"
+"}"));
         MainWindow->setCentralWidget(centralWidget);
 
         retranslateUi(MainWindow);
@@ -288,6 +345,9 @@ public:
         labelFilters->setText(QApplication::translate("MainWindow", "\320\244\320\270\320\273\321\214\321\202\321\200\321\213:", nullptr));
         addButton->setText(QApplication::translate("MainWindow", "+", nullptr));
         delButton->setText(QApplication::translate("MainWindow", "del", nullptr));
+        importButton->setText(QApplication::translate("MainWindow", "\320\230\320\274\320\277\320\276\321\200\321\202", nullptr));
+        slashLabel->setText(QApplication::translate("MainWindow", "/", nullptr));
+        exportButton->setText(QApplication::translate("MainWindow", "\320\255\320\272\321\201\320\277\320\276\321\200\321\202", nullptr));
     } // retranslateUi
 
 };

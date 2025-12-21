@@ -103,6 +103,9 @@ void MainWindow::switchToTable(const QString &tableName, const QString &title) {
         ui->tableView->setItemDelegateForColumn(4, new FixedListDelegate(roles, this));
 
         ui->labelFilters->hide();
+        ui->slashLabel->hide();
+        ui->importButton->hide();
+        ui->exportButton->hide();
     }
     else if (tableName == "groups") {
         // Колонка 3: Тренер (используем ваш RelationComboBoxDelegate)
@@ -117,6 +120,9 @@ void MainWindow::switchToTable(const QString &tableName, const QString &title) {
         // TableManager уже поставил туда ButtonDelegate, и мы его не трогаем.
 
         ui->labelFilters->show();
+        ui->slashLabel->hide();
+        ui->importButton->hide();
+        ui->exportButton->hide();
     }
     else if (tableName == "schedule") {
         // Колонка 1: Группа
@@ -136,6 +142,9 @@ void MainWindow::switchToTable(const QString &tableName, const QString &title) {
         model->setHeaderData(4, Qt::Horizontal, "Вр. окончания");
         model->setHeaderData(5, Qt::Horizontal, "Зал");
         ui->labelFilters->hide();
+        ui->slashLabel->show();
+        ui->importButton->show();
+        ui->exportButton->show();
     }
     else if (tableName == "attendance") {
         model->setHeaderData(1, Qt::Horizontal, "ФИО");
@@ -151,6 +160,9 @@ void MainWindow::switchToTable(const QString &tableName, const QString &title) {
         ui->tableView->setItemDelegateForColumn(4, new CheckBoxDelegate(this));
 
         ui->labelFilters->show();
+        ui->slashLabel->show();
+        ui->importButton->show();
+        ui->exportButton->show();
     }
 
     // 5. Финальные штрихи
@@ -453,69 +465,49 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 void MainWindow::on_anySearchField_changed() {
     QMap<int, QString> filters;
 
-    // Логируем для отладки, чтобы видеть, какой метод вызван
-    qDebug() << "Фильтрация для таблицы:" << currentTable;
-
     if (currentTable == "users") {
         // Таблица: id(0), login(1), pass(2), full_name(3), role(4)
         QString fio = ui->searchLineEdit1->text().trimmed();
-        if (!fio.isEmpty()) {
-            filters.insert(3, fio);
-        }
+        if (!fio.isEmpty()) filters.insert(3, fio);
     }
     else if (currentTable == "groups") {
-        // Таблица: id(0), name(1), specialization(2), trainer_id(3)
-        // ВАЖНО: Каждое поле проверяется отдельно (без else)
-
-        // 1. Поиск по Названию группы (Колонка 1)
+        // Таблица: id(0), name(1), direction(2), trainer_id(3)
         QString groupName = ui->searchLineEdit1->text().trimmed();
-        if (!groupName.isEmpty()) {
-            filters.insert(1, groupName);
-        }
+        if (!groupName.isEmpty()) filters.insert(1, groupName);
 
-        // 2. Поиск по Направлению/Специализации (Колонка 2)
-        // Проверьте, что в дизайнере это поле называется searchLineEdit2
-        QString direction = ui->searchLineEdit2->text().trimmed();
-        if (!direction.isEmpty()) {
-            filters.insert(2, direction);
-        }
+        // Направление — это searchLineEdit2 (по вашему updateUI для Групп)
+        QString direction = ui->filterLineEdit2->text().trimmed();
+        if (!direction.isEmpty()) filters.insert(2, direction);
 
-        // 3. Поиск по ФИО Тренера (Колонка 3)
-        // Обычно это поле фильтрации в выпадающем списке или отдельный lineEdit
+        // Тренер — это filterLineEdit1
         QString trainer = ui->filterLineEdit1->text().trimmed();
-        if (!trainer.isEmpty()) {
-            filters.insert(3, trainer);
-        }
+        if (!trainer.isEmpty()) filters.insert(3, trainer);
     }
     else if (currentTable == "schedule") {
-        // Таблица: id(0), group_id(1), day_of_week(2), ...
+        // Таблица: id(0), group_id(1), day_of_week(2)
         QString group = ui->searchLineEdit1->text().trimmed();
-        if (!group.isEmpty()) {
-            filters.insert(1, group);
-        }
+        if (!group.isEmpty()) filters.insert(1, group);
 
         QString day = ui->searchLineEdit2->text().trimmed();
-        if (!day.isEmpty()) {
-            filters.insert(2, day);
-        }
+        if (!day.isEmpty()) filters.insert(2, day);
     }
     else if (currentTable == "attendance") {
         // Таблица: id(0), student_id(1), group_id(2), date(3), status(4)
-        QString student = ui->searchLineEdit1->text().trimmed();
-        if (!student.isEmpty()) {
-            filters.insert(1, student);
-        }
 
-        QString group = ui->searchLineEdit2->text().trimmed();
-        if (!group.isEmpty()) {
-            filters.insert(2, group);
-        }
+        // 1. Ученик (Колонка 1) - searchLineEdit1
+        QString student = ui->searchLineEdit1->text().trimmed();
+        if (!student.isEmpty()) filters.insert(1, student);
+
+        // 2. Дата (Колонка 3) - searchLineEdit2
+        // ВНИМАНИЕ: Здесь была ошибка в индексе (было 2, стало 3)
+        QString date = ui->searchLineEdit2->text().trimmed();
+        if (!date.isEmpty()) filters.insert(3, date);
+
+        // 3. Группа (Колонка 2) - filterLineEdit1
+        QString group = ui->filterLineEdit1->text().trimmed();
+        if (!group.isEmpty()) filters.insert(2, group);
     }
 
-    // Проверяем в консоли, что мы собрали
-    qDebug() << "Итоговая карта фильтров:" << filters;
-
-    // Отправляем карту в TableManager
     if (tableManager) {
         tableManager->applyMultiFilter(filters);
     }

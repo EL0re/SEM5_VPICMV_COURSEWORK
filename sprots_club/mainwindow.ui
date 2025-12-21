@@ -449,6 +449,104 @@ QPushButton:hover {
      <string>del</string>
     </property>
    </widget>
+   <widget class="QPushButton" name="importButton">
+    <property name="geometry">
+     <rect>
+      <x>970</x>
+      <y>20</y>
+      <width>93</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>9</pointsize>
+      <weight>62</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">QPushButton {
+    background-color: #e0e0e0; 
+    color: #444444;
+    border: none;
+	border-radius: 5px;
+    text-align: center; 
+    font-weight: 500;
+}
+
+QPushButton:hover {
+    background-color: #d5d5d5;
+}
+
+QPushButton:checked {
+    background-color: #bdbdbd;
+    font-weight: bold;
+}</string>
+    </property>
+    <property name="text">
+     <string>Импорт</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="slashLabel">
+    <property name="geometry">
+     <rect>
+      <x>1070</x>
+      <y>20</y>
+      <width>16</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>12</pointsize>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>/</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="exportButton">
+    <property name="geometry">
+     <rect>
+      <x>1090</x>
+      <y>20</y>
+      <width>93</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>9</pointsize>
+      <weight>62</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">QPushButton {
+    background-color: #e0e0e0; 
+    color: #444444;
+    border: none;
+    border-radius: 5px;
+    text-align: center; 
+    font-weight: 500;
+}
+
+QPushButton:hover {
+    background-color: #d5d5d5;
+}
+
+QPushButton:checked {
+    background-color: #bdbdbd;
+    font-weight: bold;
+}</string>
+    </property>
+    <property name="text">
+     <string>Экспорт</string>
+    </property>
+   </widget>
   </widget>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
