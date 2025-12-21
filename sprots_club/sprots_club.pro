@@ -37,7 +37,8 @@ HEADERS += \
         logindialog.h \
         mainwindow.h \
         studentsortproxymodel.h \
-        tablemanager.h
+        tablemanager.h \
+        utils.h
 
 FORMS += \
         logindialog.ui \

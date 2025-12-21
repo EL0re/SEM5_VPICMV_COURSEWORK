@@ -17,6 +17,7 @@
 #include <QFile>
 #include <QDate>
 #include <QTime>
+#include "utils.h"
 
 MainWindow::MainWindow(const QString &fullName, QWidget *parent) :
     QMainWindow(parent),
@@ -550,7 +551,22 @@ void MainWindow::onModelDataChanged(const QModelIndex &topLeft, const QModelInde
     int row = topLeft.row();
     int col = topLeft.column();
 
-    // --- ПРОВЕРКА ДУБЛИКАТА ФИО ---
+    if (currentTable == "users" && col == 2)
+    {
+        QString currentPass = model->index(row, 2).data().toString();
+
+
+        if (!currentPass.isEmpty() && currentPass.length() != 64) {
+            QString hashedPass = hashPassword(currentPass);
+
+            model->blockSignals(true); // Отключаем сигналы, чтобы не зациклиться
+            model->setData(model->index(row, 2), hashedPass);
+            model->blockSignals(false);
+
+            qDebug() << "Пароль захеширован автоматически.";
+        }
+    }
+
     if (currentTable == "users" && col == 3) {
         QString name = model->index(row, 3).data().toString().trimmed();
         int currentId = model->index(row, 0).data().toInt();

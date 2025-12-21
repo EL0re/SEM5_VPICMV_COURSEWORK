@@ -4,6 +4,7 @@
 #include <QtSql>
 #include <QMessageBox>
 #include <QDir>
+#include <QCryptographicHash>
 
 int main(int argc, char *argv[])
 {
@@ -45,3 +46,5 @@ int main(int argc, char *argv[])
 
     return 0;
 }
+
+
