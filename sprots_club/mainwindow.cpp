@@ -65,40 +65,38 @@ void MainWindow::updateUI(bool s1, bool s2, bool f1, bool f2, const QString &ps1
 }
 
 void MainWindow::switchToTable(const QString &tableName, const QString &title) {
-    // 1. Сбрасываем фокус
-    if (ui->tableView->currentIndex().isValid()) {
-        ui->tableView->setCurrentIndex(QModelIndex());
-    }
-
-    // 2. Сохраняем изменения перед переходом
+    // 1. СНАЧАЛА СОХРАНЯЕМ: Если есть изменения в текущей таблице, записываем их перед переходом
     if (tableManager && tableManager->getModel()) {
-        if (tableManager->getModel()->isDirty()) {
-            if (!tableManager->getModel()->submitAll()) {
-                qDebug() << "Не удалось сохранить изменения:" << tableManager->getModel()->lastError().text();
-                tableManager->getModel()->revertAll();
+        auto m = tableManager->getModel();
+        if (m->isDirty()) {
+            if (!m->submitAll()) {
+                qDebug() << "Ошибка сохранения при переходе:" << m->lastError().text();
+                m->revertAll();
             }
         }
+    }
+
+    // 2. Сбрасываем фокус
+    if (ui->tableView->currentIndex().isValid()) {
+        ui->tableView->setCurrentIndex(QModelIndex());
     }
 
     currentTable = tableName;
     ui->label->setText(title);
 
-    // 3. ПЕРВЫМ ДЕЛОМ: Настраиваем базовую структуру через менеджер
-    // Здесь создается модель, прокси и добавляется кнопка для групп в последнюю колонку.
+    // 3. Настраиваем базовую структуру через менеджер
     tableManager->setupTable(tableName, ui->tableView);
 
     auto model = tableManager->getModel();
     if (!model) return;
 
-    // 4. НАКЛАДЫВАЕМ ДЕЛЕГАТЫ (Возвращаем списки и счетчики)
-
+    // 4. НАКЛАДЫВАЕМ ДЕЛЕГАТЫ
     if (tableName == "users") {
         model->setHeaderData(1, Qt::Horizontal, "Логин");
         model->setHeaderData(2, Qt::Horizontal, "Пароль");
         model->setHeaderData(3, Qt::Horizontal, "ФИО");
         model->setHeaderData(4, Qt::Horizontal, "Роль");
 
-        // Возвращаем список ролей
         QStringList roles = {"admin", "trainer", "student"};
         ui->tableView->setItemDelegateForColumn(4, new FixedListDelegate(roles, this));
 
@@ -108,16 +106,11 @@ void MainWindow::switchToTable(const QString &tableName, const QString &title) {
         ui->exportButton->hide();
     }
     else if (tableName == "groups") {
-        // Колонка 3: Тренер (используем ваш RelationComboBoxDelegate)
         ui->tableView->setItemDelegateForColumn(3, new RelationComboBoxDelegate("users", "full_name", "role='trainer'", this));
-
         model->setHeaderData(1, Qt::Horizontal, "Название группы");
         model->setHeaderData(2, Qt::Horizontal, "Направление");
         model->setHeaderData(3, Qt::Horizontal, "Тренер");
-        model->setHeaderData(4, Qt::Horizontal, "Состав"); // Заголовок для кнопки
-
-        // ВАЖНО: Мы НЕ вызываем setItemDelegateForColumn(4, nullptr) здесь!
-        // TableManager уже поставил туда ButtonDelegate, и мы его не трогаем.
+        model->setHeaderData(4, Qt::Horizontal, "Состав");
 
         ui->labelFilters->show();
         ui->slashLabel->hide();
@@ -125,14 +118,9 @@ void MainWindow::switchToTable(const QString &tableName, const QString &title) {
         ui->exportButton->hide();
     }
     else if (tableName == "schedule") {
-        // Колонка 1: Группа
         ui->tableView->setItemDelegateForColumn(1, new RelationComboBoxDelegate("groups", "name", "", this));
-
-        // Колонка 2: День недели
         QStringList days = {"Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"};
         ui->tableView->setItemDelegateForColumn(2, new FixedListDelegate(days, this));
-
-        // Колонки 3 и 4: Время (счетчики/TimeEdit)
         ui->tableView->setItemDelegateForColumn(3, new TimeEditDelegate(this));
         ui->tableView->setItemDelegateForColumn(4, new TimeEditDelegate(this));
 
@@ -141,6 +129,7 @@ void MainWindow::switchToTable(const QString &tableName, const QString &title) {
         model->setHeaderData(3, Qt::Horizontal, "Вр. начала");
         model->setHeaderData(4, Qt::Horizontal, "Вр. окончания");
         model->setHeaderData(5, Qt::Horizontal, "Зал");
+
         ui->labelFilters->hide();
         ui->slashLabel->show();
         ui->importButton->show();
@@ -152,11 +141,8 @@ void MainWindow::switchToTable(const QString &tableName, const QString &title) {
         model->setHeaderData(3, Qt::Horizontal, "Дата занятия");
         model->setHeaderData(4, Qt::Horizontal, "Статус");
 
-        // Колонки 1 и 2: Списки ФИО и Групп
         ui->tableView->setItemDelegateForColumn(1, new RelationComboBoxDelegate("users", "full_name", "role='student'", this));
         ui->tableView->setItemDelegateForColumn(2, new RelationComboBoxDelegate("groups", "name", "", this));
-
-        // Колонка 4: Чекбокс
         ui->tableView->setItemDelegateForColumn(4, new CheckBoxDelegate(this));
 
         ui->labelFilters->show();
@@ -165,7 +151,6 @@ void MainWindow::switchToTable(const QString &tableName, const QString &title) {
         ui->exportButton->show();
     }
 
-    // 5. Финальные штрихи
     ui->tableView->hideColumn(0);
     reloadview();
 }
@@ -216,10 +201,6 @@ void MainWindow::on_addButton_clicked() {
 
         if (model->insertRow(0)) {
 
-            if (currentTable == "users") {
-                model->setData(model->index(0, 4), "student");
-            }
-
             QModelIndex proxyIndex = tableManager->getProxyModel()->mapFromSource(model->index(0, 1));
 
             ui->tableView->scrollToTop();
@@ -242,16 +223,33 @@ void MainWindow::on_delButton_clicked() {
         else return;
     }
 
+    auto model = tableManager->getModel();
+    auto proxy = tableManager->getProxyModel();
+
+    // --- ЗАЩИТА АДМИНИСТРАТОРА (ВСТАВЛЕНО СЮДА) ---
+    if (currentTable == "users") {
+        QString currentUserFio = ui->FIO_Label->text().trimmed();
+        for (const QModelIndex &proxyIdx : selectedRows) {
+            QModelIndex sourceIdx = proxy->mapToSource(proxyIdx);
+            int r = sourceIdx.row();
+            // 3 - ФИО, 4 - Роль
+            QString targetFio = model->data(model->index(r, 3)).toString().trimmed();
+            QString targetRole = model->data(model->index(r, 4)).toString().trimmed();
+
+            if (targetFio == currentUserFio && targetRole == "admin") {
+                QMessageBox::warning(this, "Защита", "Вы не можете удалить свою учетную запись администратора!");
+                return; // Прерываем выполнение метода полностью
+            }
+        }
+    }
+
+    // Только если защита пройдена, спрашиваем подтверждение
     auto res = QMessageBox::question(this, "Подтверждение",
         "Удалить выбранные записи?\nЭто вызовет каскадное удаление всех связанных данных!",
         QMessageBox::Yes | QMessageBox::No);
     if (res != QMessageBox::Yes) return;
 
-    auto model = tableManager->getModel();
-    auto proxy = tableManager->getProxyModel();
-
-    // 1. Собираем ID записей, которые нужно удалить
-    // Мы будем удалять по ID, это самый надежный способ для SQLite
+    // 1. Собираем ID записей
     QList<int> idsToDelete;
     int idColumn = model->record().indexOf("id");
     if (idColumn == -1) idColumn = 0;
@@ -267,11 +265,9 @@ void MainWindow::on_delButton_clicked() {
 
     if (idsToDelete.isEmpty()) return;
 
-    // 2. Выполняем удаление через прямой SQL запрос
-    // Это гарантирует, что каскад сработает мгновенно, и не будет ошибки "No fields to update"
+    // 2. Выполняем удаление через SQL
     QSqlDatabase db = QSqlDatabase::database();
     db.transaction();
-
     QSqlQuery query;
     query.exec("PRAGMA foreign_keys = ON;");
 
@@ -286,20 +282,13 @@ void MainWindow::on_delButton_clicked() {
     }
 
     if (success && db.commit()) {
-        qDebug() << "Успешное удаление ID:" << idsToDelete;
-
-        // 3. ПЕРЕЗАГРУЗКА МОДЕЛИ
-        // Вместо submitAll (который глючит), мы просто перечитываем данные
         model->select();
-
-        // Гарантируем, что пустая строка в конце пересоздастся правильно
         ensureTrailingEmptyRow();
     } else {
         db.rollback();
         QMessageBox::critical(this, "Ошибка", "Не удалось удалить записи: " + query.lastError().text());
     }
 }
-
 
 
 void MainWindow::on_logoutButton_clicked()
@@ -319,12 +308,14 @@ bool MainWindow::isRowFilled(int row) const {
     auto model = tableManager->getModel();
     // Список обязательных полей берем из вашей схемы БД
     QStringList fields;
-    if (currentTable == "users") fields << "login" << "full_name" << "role";
+    if (currentTable == "users") fields << "login" << "password" << "full_name" << "role";
     else if (currentTable == "groups") fields << "name" << "direction";
     else if (currentTable == "attendance") fields << "lesson_date" << "status";
 
     for (const QString &f : fields) {
-        if (model->data(model->index(row, model->fieldIndex(f))).toString().isEmpty())
+        int idx = model->fieldIndex(f);
+        if (idx == -1) continue;
+        if (model->data(model->index(row, idx)).toString().trimmed().isEmpty())
             return false;
     }
     return true;
@@ -343,7 +334,24 @@ void MainWindow::onModelDataChanged(const QModelIndex &topLeft, const QModelInde
     int row = topLeft.row();
     int col = topLeft.column();
 
-    // Блокируем сигналы для предотвращения рекурсии при автоматической подстановке ID
+    // --- ПРОВЕРКА ДУБЛИКАТА ФИО ---
+    if (currentTable == "users" && col == 3) {
+        QString name = model->index(row, 3).data().toString().trimmed();
+        int currentId = model->index(row, 0).data().toInt();
+        if (!name.isEmpty()) {
+            QSqlQuery check;
+            check.prepare("SELECT id FROM users WHERE full_name = :n AND id != :id");
+            check.bindValue(":n", name);
+            check.bindValue(":id", currentId);
+            if (check.exec() && check.next()) {
+                QMessageBox::warning(this, "Дубликат", "Пользователь с таким ФИО уже есть в базе.");
+                model->revertAll();
+                model->select();
+                return;
+            }
+        }
+    }
+
     model->blockSignals(true);
 
     // 1. ПРЕОБРАЗОВАНИЕ ТЕКСТА В ID
@@ -377,7 +385,7 @@ void MainWindow::onModelDataChanged(const QModelIndex &topLeft, const QModelInde
     model->blockSignals(false);
 
     // 2. ОПРЕДЕЛЕНИЕ ГРАНИЦ ЗАПОЛНЕННОСТИ
-    int lastRequiredCol = 3;
+    int lastRequiredCol = (currentTable == "users") ? 4 : 3;
     if (currentTable == "schedule") lastRequiredCol = 5;
     else if (currentTable == "attendance") lastRequiredCol = 4;
 
