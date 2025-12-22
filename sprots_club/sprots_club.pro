@@ -29,20 +29,25 @@ SOURCES += \
         logindialog.cpp \
         main.cpp \
         mainwindow.cpp \
+        studentschedulefilterproxy.cpp \
         studentsortproxymodel.cpp \
+        studentwindow.cpp \
         tablemanager.cpp
 
 HEADERS += \
         attendanceadddialog.h \
         logindialog.h \
         mainwindow.h \
+        studentschedulefilterproxy.h \
         studentsortproxymodel.h \
+        studentwindow.h \
         tablemanager.h \
         utils.h
 
 FORMS += \
         logindialog.ui \
-        mainwindow.ui
+        mainwindow.ui \
+        studentwindow.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
