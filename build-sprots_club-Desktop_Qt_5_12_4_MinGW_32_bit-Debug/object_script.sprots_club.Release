@@ -2,10 +2,16 @@ release/attendanceadddialog.o
 release/logindialog.o
 release/main.o
 release/mainwindow.o
+release/studentschedulefilterproxy.o
 release/studentsortproxymodel.o
+release/studentwindow.o
 release/tablemanager.o
+release/trainerwindow.o
 release/moc_attendanceadddialog.o
 release/moc_logindialog.o
 release/moc_mainwindow.o
+release/moc_studentschedulefilterproxy.o
 release/moc_studentsortproxymodel.o
+release/moc_studentwindow.o
 release/moc_tablemanager.o
+release/moc_trainerwindow.o
