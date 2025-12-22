@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "studentwindow.h"
+#include "trainerwindow.h"
 #include "logindialog.h"
 #include <QApplication>
 #include <QtSql>
@@ -55,6 +56,17 @@ int main(int argc, char *argv[])
         else if (role == "student")
         {
             StudentWindow w(userId, fullName);
+            w.show();
+            int result = a.exec();
+
+            if (!w.logoutRequested)
+            {
+                return result;
+            }
+        }
+        else if (role == "trainer")
+        {
+            trainerwindow w(userId,fullName);
             w.show();
             int result = a.exec();
 
