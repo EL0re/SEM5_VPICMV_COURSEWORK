@@ -1,4 +1,5 @@
 #include "mainwindow.h"
+#include "studentwindow.h"
 #include "logindialog.h"
 #include <QApplication>
 #include <QtSql>
@@ -16,11 +17,11 @@ int main(int argc, char *argv[])
     qDebug() << "Путь к БД:" << dbPath;
         db.setDatabaseName(dbPath);
 
-        if (!db.open())
-        {
-            QMessageBox::critical(nullptr, "Ошибка подключения", QString("Не удалось открыть базу данных:\n%1\n\nПуть: %2").arg(db.lastError().text()).arg(dbPath));
-            return -1;
-        }
+    if (!db.open())
+    {
+        QMessageBox::critical(nullptr, "Ошибка подключения", QString("Не удалось открыть базу данных:\n%1\n\nПуть: %2").arg(db.lastError().text()).arg(dbPath));
+        return -1;
+    }
 
     while (true)
     {
@@ -29,22 +30,40 @@ int main(int argc, char *argv[])
         if (login.exec() != QDialog::Accepted)
             return 0;
 
-        if (login.role() != "admin")
-        {
-            continue;
+        QString role = login.role();
+        QString fullName = login.fullName();
+
+        int userId = -1;
+        QSqlQuery query;
+        query.prepare("SELECT id FROM users WHERE full_name = ?");
+        query.addBindValue(fullName);
+        if (query.exec() && query.next()) {
+            userId = query.value(0).toInt();
         }
 
-        MainWindow w(login.fullName());
-        w.show();
-        int result = a.exec();
-
-        if (!w.logoutRequested)
+        if (role == "admin")
         {
-            return result;
+            MainWindow w(fullName);
+            w.show();
+            int result = a.exec();
+
+            if (!w.logoutRequested)
+            {
+                return result;
+            }
+        }
+        else if (role == "student")
+        {
+            StudentWindow w(userId, fullName);
+            w.show();
+            int result = a.exec();
+
+            if (!w.logoutRequested)
+            {
+                return result;
+            }
         }
     }
 
     return 0;
 }
-
-
