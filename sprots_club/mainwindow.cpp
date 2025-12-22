@@ -573,7 +573,9 @@ void MainWindow::on_delButton_clicked()
         }
     }
 
-    auto res = QMessageBox::question(this, "Подтверждение", "Удалить выбранные записи?\nЭто вызовет каскадное удаление всех связанных данных!", QMessageBox::Yes | QMessageBox::No);
+    auto res = QMessageBox::question(this, "Подтверждение",
+                                     "Удалить выбранные записи?\nЭто вызовет каскадное удаление всех связанных данных!",
+                                     QMessageBox::Yes | QMessageBox::No);
     if (res != QMessageBox::Yes)
     {
         return;
@@ -590,7 +592,7 @@ void MainWindow::on_delButton_clicked()
     {
         QModelIndex sourceIdx = proxy->mapToSource(proxyIdx);
         int row = sourceIdx.row();
-        if (row < model->rowCount())
+        if (row >= 0 && row < model->rowCount())
         {
             int id = model->data(model->index(row, idColumn)).toInt();
             if (id > 0)
@@ -606,11 +608,19 @@ void MainWindow::on_delButton_clicked()
     }
 
     QSqlDatabase db = QSqlDatabase::database();
-    db.transaction();
-    QSqlQuery query;
-    query.exec("PRAGMA foreign_keys = ON;");
+
+    QSqlQuery pragmaQuery(db);
+    pragmaQuery.exec("PRAGMA foreign_keys = ON;");
+
+    if (!db.transaction())
+    {
+        QMessageBox::critical(this, "Ошибка", "Не удалось инициализировать транзакцию базы данных.");
+        return;
+    }
 
     bool success = true;
+    QSqlQuery query(db);
+
     for (int id : idsToDelete)
     {
         query.prepare(QString("DELETE FROM %1 WHERE id = ?").arg(currentTable));
@@ -625,6 +635,10 @@ void MainWindow::on_delButton_clicked()
     if (success && db.commit())
     {
         model->select();
+        while (model->canFetchMore())
+        {
+            model->fetchMore();
+        }
     }
     else
     {
