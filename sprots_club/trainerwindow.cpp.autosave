@@ -73,9 +73,9 @@
 
         if (tableName == "groups")
         {
-//            QString filter = QString("trainer_id = %1").arg(currentUserId);
-//            model->setFilter(filter);
-//            model->select();
+            QString filter = QString("trainer_id = %1").arg(currentUserId);
+            model->setFilter(filter);
+            model->select();
             ui->tableView->setItemDelegateForColumn(3, new RelationComboBoxDelegate("users", "full_name", "role='trainer'", this));
             ui->tableView->setItemDelegateForColumn(4, new ButtonDelegate(this));
             model->setHeaderData(1, Qt::Horizontal, "Название группы");

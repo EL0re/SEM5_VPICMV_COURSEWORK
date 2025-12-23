@@ -105,7 +105,7 @@ void MainWindow::switchToTable(const QString &tableName, const QString &title)
     currentTable = tableName;
     ui->label->setText(title);
 
-    tableManager->setupTable(tableName, ui->tableView);
+    tableManager->setupTable(tableName, ui->tableView, TableManager::Admin);
 
     auto model = tableManager->getModel();
     if (!model)

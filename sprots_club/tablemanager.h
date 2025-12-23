@@ -20,9 +20,14 @@ class TableManager : public QObject
 {
     Q_OBJECT
 public:
+    enum UserRole {
+        Admin,
+        Trainer,
+        Student
+    };
     explicit TableManager(QObject *parent = nullptr);
 
-    void setupTable(const QString &tableName, QTableView *view);
+    void setupTable(const QString &tableName, QTableView *view,UserRole role);
 
     void applyMultiFilter(const QMap<int, QString> &columnFilters);
 
@@ -30,6 +35,7 @@ public:
     QSortFilterProxyModel *getProxyModel() const { return proxyModel; }
 
 private:
+    UserRole currentRole;
     QSqlRelationalTableModel *model = nullptr;
     QSortFilterProxyModel *proxyModel = nullptr;
 };

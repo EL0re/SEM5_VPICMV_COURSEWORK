@@ -16,6 +16,7 @@ class trainerwindow : public QWidget
     Q_OBJECT
 
 public:
+    void onModelDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight);
     explicit trainerwindow(int userId, const QString &fullName, QWidget *parent = nullptr);
     ~trainerwindow();
 
@@ -34,6 +35,7 @@ private:
     QString currentTable;
     TableManager *tableManager;
     int currentUserId;
+    void setupDelegatesForCurrentTable();
     void switchToTable(const QString &tableName, const QString &title);
     void reloadview();
     void updateUI(bool s1, bool s2, bool f1, bool f2, const QString &ps1, const QString &ps2, const QString &pf1, const QString &pf2);

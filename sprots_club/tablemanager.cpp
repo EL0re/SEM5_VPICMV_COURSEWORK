@@ -24,138 +24,310 @@ TableManager::TableManager(QObject *parent) : QObject(parent)
    связи между таблицами для имен вместо ID,
    загрузка данных из бд, создание виртуальных колонок для кнопок,
    модель для фильтрации, отрисовка кнопок(вызывает т к у них свои приколы), чекбоксов и выпадающих списков. */
-void TableManager::setupTable(const QString &tableName, QTableView *view)
+void TableManager::setupTable(const QString &tableName, QTableView *view, UserRole role)
 {
-    if (model)
-    {
-        model->deleteLater();
-        model = nullptr;
-    }
-    if (proxyModel)
-    {
-        proxyModel->deleteLater();
-        proxyModel = nullptr;
-    }
+    currentRole = role;
 
-    model = new QSqlRelationalTableModel(this, QSqlDatabase::database());
-
-    MainWindow* mw = qobject_cast<MainWindow*>(this->parent());
-    if (mw)
-    {
-        connect(model, &QSqlRelationalTableModel::dataChanged, mw, &MainWindow::onModelDataChanged);
-    }
-    model->setTable(tableName);
-
-    if (tableName == "groups")
-    {
-        model->setRelation(3, QSqlRelation("users", "id", "full_name"));
-    }
-    else if (tableName == "schedule")
-    {
-        model->setRelation(1, QSqlRelation("groups", "id", "name"));
-    }
-    else if (tableName == "attendance")
-    {
-        model->setRelation(1, QSqlRelation("users", "id", "full_name"));
-        model->setRelation(2, QSqlRelation("groups", "id", "name"));
-    }
-
-    model->setEditStrategy(QSqlTableModel::OnManualSubmit);
-
-    if (!model->select())
-    {
-        qDebug() << "SQL Error:" << model->lastError().text();
-    }
-
-    int btnColumnIdx = -1;
-    if (tableName == "groups")
-    {
-        btnColumnIdx = model->columnCount();
-        model->insertColumn(btnColumnIdx);
-        model->setHeaderData(btnColumnIdx, Qt::Horizontal, "Состав");
-    }
-
-    proxyModel = new MultiFilterProxyModel(this);
-    proxyModel->setSourceModel(model);
-    proxyModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
-    view->setModel(proxyModel);
-
-    for (int i = 0; i < view->model()->columnCount(); ++i)
-    {
-        view->setItemDelegateForColumn(i, new QStyledItemDelegate(view));
-    }
-
-    if (tableName == "groups" && btnColumnIdx != -1)
-    {
-        view->setItemDelegateForColumn(3, new QSqlRelationalDelegate(view));
-
-        ButtonDelegate *btnDelegate = new ButtonDelegate(view);
-        view->setItemDelegateForColumn(btnColumnIdx, btnDelegate);
-
-        connect(btnDelegate, &ButtonDelegate::buttonClicked, this, [this, view, btnColumnIdx](const QModelIndex &proxyIndex)
+    switch(currentRole) {
+    case Admin: {
+        // Админ - полный доступ (ваш текущий код)
+        if (model)
         {
-            if (!proxyIndex.isValid() || proxyIndex.column() != btnColumnIdx)
+            model->deleteLater();
+            model = nullptr;
+        }
+        if (proxyModel)
+        {
+            proxyModel->deleteLater();
+            proxyModel = nullptr;
+        }
+
+        model = new QSqlRelationalTableModel(this, QSqlDatabase::database());
+
+        MainWindow* mw = qobject_cast<MainWindow*>(this->parent());
+        if (mw)
+        {
+            connect(model, &QSqlRelationalTableModel::dataChanged, mw, &MainWindow::onModelDataChanged);
+        }
+        model->setTable(tableName);
+
+        if (tableName == "groups")
+        {
+            model->setRelation(3, QSqlRelation("users", "id", "full_name"));
+        }
+        else if (tableName == "schedule")
+        {
+            model->setRelation(1, QSqlRelation("groups", "id", "name"));
+        }
+        else if (tableName == "attendance")
+        {
+            model->setRelation(1, QSqlRelation("users", "id", "full_name"));
+            model->setRelation(2, QSqlRelation("groups", "id", "name"));
+        }
+
+        model->setEditStrategy(QSqlTableModel::OnManualSubmit);
+
+        if (!model->select())
+        {
+            qDebug() << "SQL Error:" << model->lastError().text();
+        }
+
+        int btnColumnIdx = -1;
+        if (tableName == "groups")
+        {
+            btnColumnIdx = model->columnCount();
+            model->insertColumn(btnColumnIdx);
+            model->setHeaderData(btnColumnIdx, Qt::Horizontal, "Состав");
+        }
+
+        proxyModel = new MultiFilterProxyModel(this);
+        proxyModel->setSourceModel(model);
+        proxyModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
+        view->setModel(proxyModel);
+
+        for (int i = 0; i < view->model()->columnCount(); ++i)
+        {
+            view->setItemDelegateForColumn(i, new QStyledItemDelegate(view));
+        }
+
+        if (tableName == "groups" && btnColumnIdx != -1)
+        {
+            view->setItemDelegateForColumn(3, new QSqlRelationalDelegate(view));
+
+            ButtonDelegate *btnDelegate = new ButtonDelegate(view);
+            view->setItemDelegateForColumn(btnColumnIdx, btnDelegate);
+
+            connect(btnDelegate, &ButtonDelegate::buttonClicked, this, [this, view, btnColumnIdx](const QModelIndex &proxyIndex)
             {
-                return;
-            }
-
-            QModelIndex sourceIndex = proxyModel->mapToSource(proxyIndex);
-            int row = sourceIndex.row();
-
-            int idCol = model->record().indexOf("id");
-            if (idCol == -1)
-            {
-                idCol = 0;
-            }
-
-            int groupId = model->data(model->index(row, idCol)).toInt();
-            QString groupName = model->data(model->index(row, 1)).toString();
-
-            if (groupId <= 0)
-            {
-                return;
-            }
-
-            EditGroupStudentsDialog dialog(groupId, groupName, view->window());
-            if (dialog.exec() == QDialog::Accepted)
-            {
-                QList<int> selectedIds = dialog.getSelectedStudentIds();
-                QSqlDatabase db = QSqlDatabase::database();
-
-                if (db.transaction())
+                if (!proxyIndex.isValid() || proxyIndex.column() != btnColumnIdx)
                 {
-                    QSqlQuery q;
-                    q.prepare("DELETE FROM group_students WHERE group_id = ?");
-                    q.addBindValue(groupId);
-                    q.exec();
+                    return;
+                }
 
-                    q.prepare("INSERT INTO group_students (group_id, student_id) VALUES (?, ?)");
-                    for (int sId : selectedIds)
+                QModelIndex sourceIndex = proxyModel->mapToSource(proxyIndex);
+                int row = sourceIndex.row();
+
+                int idCol = model->record().indexOf("id");
+                if (idCol == -1)
+                {
+                    idCol = 0;
+                }
+
+                int groupId = model->data(model->index(row, idCol)).toInt();
+                QString groupName = model->data(model->index(row, 1)).toString();
+
+                if (groupId <= 0)
+                {
+                    return;
+                }
+
+                EditGroupStudentsDialog dialog(groupId, groupName, view->window());
+                if (dialog.exec() == QDialog::Accepted)
+                {
+                    QList<int> selectedIds = dialog.getSelectedStudentIds();
+                    QSqlDatabase db = QSqlDatabase::database();
+
+                    if (db.transaction())
                     {
+                        QSqlQuery q;
+                        q.prepare("DELETE FROM group_students WHERE group_id = ?");
                         q.addBindValue(groupId);
-                        q.addBindValue(sId);
                         q.exec();
-                    }
-                    if (db.commit())
-                    {
-                        qDebug() << "Success";
-                    }
-                    else
-                    {
-                        db.rollback();
+
+                        q.prepare("INSERT INTO group_students (group_id, student_id) VALUES (?, ?)");
+                        for (int sId : selectedIds)
+                        {
+                            q.addBindValue(groupId);
+                            q.addBindValue(sId);
+                            q.exec();
+                        }
+                        if (db.commit())
+                        {
+                            qDebug() << "Success";
+                        }
+                        else
+                        {
+                            db.rollback();
+                        }
                     }
                 }
-            }
-        }, Qt::UniqueConnection);
-    }
-    else if (tableName == "attendance")
-    {
-        view->setItemDelegateForColumn(4, new CheckBoxDelegate(view));
+            }, Qt::UniqueConnection);
+        }
+        else if (tableName == "attendance")
+        {
+            view->setItemDelegateForColumn(4, new CheckBoxDelegate(view));
+        }
+
+        view->setEditTriggers(QAbstractItemView::DoubleClicked | QAbstractItemView::EditKeyPressed);
+        view->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+        view->viewport()->update();
+        break;
     }
 
-    view->setEditTriggers(QAbstractItemView::DoubleClicked | QAbstractItemView::EditKeyPressed);
-    view->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    view->viewport()->update();
+    case Trainer: {
+        // Тренер - ограниченный доступ
+        if (model)
+        {
+            model->deleteLater();
+            model = nullptr;
+        }
+        if (proxyModel)
+        {
+            proxyModel->deleteLater();
+            proxyModel = nullptr;
+        }
+
+        model = new QSqlRelationalTableModel(this, QSqlDatabase::database());
+
+        MainWindow* mw = qobject_cast<MainWindow*>(this->parent());
+        if (mw)
+        {
+            connect(model, &QSqlRelationalTableModel::dataChanged, mw, &MainWindow::onModelDataChanged);
+        }
+        model->setTable(tableName);
+
+        if (tableName == "groups")
+        {
+            model->setRelation(3, QSqlRelation("users", "id", "full_name"));
+        }
+        else if (tableName == "schedule")
+        {
+            model->setRelation(1, QSqlRelation("groups", "id", "name"));
+        }
+        else if (tableName == "attendance")
+        {
+            model->setRelation(1, QSqlRelation("users", "id", "full_name"));
+            model->setRelation(2, QSqlRelation("groups", "id", "name"));
+        }
+
+        model->setEditStrategy(QSqlTableModel::OnManualSubmit);
+
+        if (!model->select())
+        {
+            qDebug() << "SQL Error:" << model->lastError().text();
+        }
+
+        int btnColumnIdx = -1;
+        if (tableName == "groups")
+        {
+            btnColumnIdx = model->columnCount();
+            model->insertColumn(btnColumnIdx);
+            model->setHeaderData(btnColumnIdx, Qt::Horizontal, "Состав");
+        }
+
+        proxyModel = new MultiFilterProxyModel(this);
+        proxyModel->setSourceModel(model);
+        proxyModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
+        view->setModel(proxyModel);
+
+        // Для тренера права зависят от таблицы
+        if (tableName == "attendance") {
+            // Для посещаемости - полный доступ
+            for (int i = 0; i < view->model()->columnCount(); ++i)
+            {
+                view->setItemDelegateForColumn(i, new QStyledItemDelegate(view));
+            }
+
+            // Разрешаем редактирование статуса
+            view->setItemDelegateForColumn(4, new CheckBoxDelegate(view));
+            view->setEditTriggers(QAbstractItemView::DoubleClicked | QAbstractItemView::EditKeyPressed);
+        }
+        else {
+            // Для groups и schedule - только чтение
+            for (int i = 0; i < view->model()->columnCount(); ++i)
+            {
+                view->setItemDelegateForColumn(i, new QStyledItemDelegate(view));
+            }
+
+            // Скрываем кнопку "Состав" в таблице групп
+            if (tableName == "groups" && btnColumnIdx != -1)
+            {
+                view->setColumnHidden(btnColumnIdx, true);
+            }
+
+            // Запрещаем редактирование
+            view->setEditTriggers(QAbstractItemView::NoEditTriggers);
+        }
+
+        view->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+        view->viewport()->update();
+        break;
+    }
+
+    case Student: {
+        // Студент - только чтение
+        if (model)
+        {
+            model->deleteLater();
+            model = nullptr;
+        }
+        if (proxyModel)
+        {
+            proxyModel->deleteLater();
+            proxyModel = nullptr;
+        }
+
+        model = new QSqlRelationalTableModel(this, QSqlDatabase::database());
+
+        MainWindow* mw = qobject_cast<MainWindow*>(this->parent());
+        if (mw)
+        {
+            connect(model, &QSqlRelationalTableModel::dataChanged, mw, &MainWindow::onModelDataChanged);
+        }
+        model->setTable(tableName);
+
+        if (tableName == "groups")
+        {
+            model->setRelation(3, QSqlRelation("users", "id", "full_name"));
+        }
+        else if (tableName == "schedule")
+        {
+            model->setRelation(1, QSqlRelation("groups", "id", "name"));
+        }
+        else if (tableName == "attendance")
+        {
+            model->setRelation(1, QSqlRelation("users", "id", "full_name"));
+            model->setRelation(2, QSqlRelation("groups", "id", "name"));
+        }
+
+        model->setEditStrategy(QSqlTableModel::OnManualSubmit);
+
+        if (!model->select())
+        {
+            qDebug() << "SQL Error:" << model->lastError().text();
+        }
+
+        int btnColumnIdx = -1;
+        if (tableName == "groups")
+        {
+            btnColumnIdx = model->columnCount();
+            model->insertColumn(btnColumnIdx);
+            model->setHeaderData(btnColumnIdx, Qt::Horizontal, "Состав");
+        }
+
+        proxyModel = new MultiFilterProxyModel(this);
+        proxyModel->setSourceModel(model);
+        proxyModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
+        view->setModel(proxyModel);
+
+        // Студент - только чтение всех таблиц
+        for (int i = 0; i < view->model()->columnCount(); ++i)
+        {
+            view->setItemDelegateForColumn(i, new QStyledItemDelegate(view));
+        }
+
+        // Скрываем кнопку "Состав" в группах
+        if (tableName == "groups" && btnColumnIdx != -1)
+        {
+            view->setColumnHidden(btnColumnIdx, true);
+        }
+
+        view->setEditTriggers(QAbstractItemView::NoEditTriggers);
+        view->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+        view->viewport()->update();
+        break;
+    }
+    }
 }
 
 /* крч для чекбокса фигня, чтобы текстовое поле не мелькало при нажатии */
