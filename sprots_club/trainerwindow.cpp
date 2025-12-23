@@ -1,8 +1,5 @@
 #include "trainerwindow.h"
 #include "ui_trainerwindow.h"
-
-
-
 #include <QDebug>
 #include <QSqlError>
 #include <QSqlQuery>
@@ -10,12 +7,6 @@
 #include "attendanceadddialog.h"
 #include "studentsortproxymodel.h"
 #include <QSqlRecord>
-//#include <QTextStream>
-//#include <QStandardPaths>
-//#include <QDateTime>
-//#include <QFile>
-//#include <QDate>
-//#include <QTime>
 #include "utils.h"
 
 trainerwindow::trainerwindow(int userId, const QString &fullName, QWidget *parent) :
