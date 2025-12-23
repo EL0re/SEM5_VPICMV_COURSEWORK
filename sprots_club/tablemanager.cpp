@@ -311,11 +311,8 @@ void ButtonDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option
     QFont font = painter->font();
     font.setBold(true);
     painter->setFont(font);
-<<<<<<< HEAD
     painter->drawText(btnRect, Qt::AlignCenter, "Показать");
-=======
-    painter->drawText(btnRect, Qt::AlignCenter, "Показать");
->>>>>>> c72040c51c21bc9d88fba8e24cd8239ec4bd93fb
+
 
     painter->restore();
 }
