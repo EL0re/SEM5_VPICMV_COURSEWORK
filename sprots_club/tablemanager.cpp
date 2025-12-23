@@ -165,7 +165,6 @@ void TableManager::setupTable(const QString &tableName, QTableView *view, UserRo
     }
 
     case Trainer: {
-        // Тренер - ограниченный доступ
         if (model)
         {
             model->deleteLater();
@@ -254,79 +253,7 @@ void TableManager::setupTable(const QString &tableName, QTableView *view, UserRo
         break;
     }
 
-    case Student: {
-        // Студент - только чтение
-        if (model)
-        {
-            model->deleteLater();
-            model = nullptr;
-        }
-        if (proxyModel)
-        {
-            proxyModel->deleteLater();
-            proxyModel = nullptr;
-        }
 
-        model = new QSqlRelationalTableModel(this, QSqlDatabase::database());
-
-        MainWindow* mw = qobject_cast<MainWindow*>(this->parent());
-        if (mw)
-        {
-            connect(model, &QSqlRelationalTableModel::dataChanged, mw, &MainWindow::onModelDataChanged);
-        }
-        model->setTable(tableName);
-
-        if (tableName == "groups")
-        {
-            model->setRelation(3, QSqlRelation("users", "id", "full_name"));
-        }
-        else if (tableName == "schedule")
-        {
-            model->setRelation(1, QSqlRelation("groups", "id", "name"));
-        }
-        else if (tableName == "attendance")
-        {
-            model->setRelation(1, QSqlRelation("users", "id", "full_name"));
-            model->setRelation(2, QSqlRelation("groups", "id", "name"));
-        }
-
-        model->setEditStrategy(QSqlTableModel::OnManualSubmit);
-
-        if (!model->select())
-        {
-            qDebug() << "SQL Error:" << model->lastError().text();
-        }
-
-        int btnColumnIdx = -1;
-        if (tableName == "groups")
-        {
-            btnColumnIdx = model->columnCount();
-            model->insertColumn(btnColumnIdx);
-            model->setHeaderData(btnColumnIdx, Qt::Horizontal, "Состав");
-        }
-
-        proxyModel = new MultiFilterProxyModel(this);
-        proxyModel->setSourceModel(model);
-        proxyModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
-        view->setModel(proxyModel);
-
-        // Студент - только чтение всех таблиц
-        for (int i = 0; i < view->model()->columnCount(); ++i)
-        {
-            view->setItemDelegateForColumn(i, new QStyledItemDelegate(view));
-        }
-
-        // Скрываем кнопку "Состав" в группах
-        if (tableName == "groups" && btnColumnIdx != -1)
-        {
-            view->setColumnHidden(btnColumnIdx, true);
-        }
-
-        view->setEditTriggers(QAbstractItemView::NoEditTriggers);
-        view->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-        view->viewport()->update();
-        break;
-    }
     }
 }
 
@@ -384,7 +311,7 @@ void ButtonDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option
     QFont font = painter->font();
     font.setBold(true);
     painter->setFont(font);
-    painter->drawText(btnRect, Qt::AlignCenter, "Ред.");
+    painter->drawText(btnRect, Qt::AlignCenter, "Показ.");
 
     painter->restore();
 }
