@@ -73,21 +73,96 @@
 
         if (tableName == "groups")
         {
-//            QString filter = QString("trainer_id = %1").arg(currentUserId);
-//            model->setFilter(filter);
-//            model->select();
+            ui->addButton->hide();
+            ui->filterLineEdit2->hide();
+            ui->labelFilters->show();
+            // 1. Применяем фильтр для показа только групп текущего тренера
+            QString filter = QString("trainer_id = %1").arg(currentUserId);
+            model->setFilter(filter);
+            model->select();
+
+            // 2. Устанавливаем делегаты
             ui->tableView->setItemDelegateForColumn(3, new RelationComboBoxDelegate("users", "full_name", "role='trainer'", this));
-            ui->tableView->setItemDelegateForColumn(4, new ButtonDelegate(this));
+
+            // 3. Получаем текущее количество колонок
+            int colCount = model->columnCount();
+
+            // 4. Если в модели еще нет колонки для кнопки, добавляем ее
+            bool hasButtonColumn = false;
+            for (int i = 0; i < colCount; ++i) {
+                QString header = model->headerData(i, Qt::Horizontal).toString();
+                if (header.contains("Действия", Qt::CaseInsensitive) ||
+                    header.contains("Состав", Qt::CaseInsensitive)) {
+                    hasButtonColumn = true;
+                    break;
+                }
+            }
+
+            // 5. Если колонки с кнопкой нет - добавляем
+            if (!hasButtonColumn) {
+                // Добавляем колонку "Состав" как последнюю
+                model->insertColumn(colCount);
+                colCount = model->columnCount();
+            }
+
+            // 6. Устанавливаем заголовки
             model->setHeaderData(1, Qt::Horizontal, "Название группы");
             model->setHeaderData(2, Qt::Horizontal, "Направление");
             model->setHeaderData(3, Qt::Horizontal, "Тренер");
-            model->setHeaderData(4, Qt::Horizontal, "Состав");
+            model->setHeaderData(colCount-1, Qt::Horizontal, "Состав");
 
-            ui->labelFilters->show();
-            ui->addButton->hide();
-    //        ui->slashLabel->hide();
-    //        ui->importButton->hide();
-    //        ui->exportButton->hide();
+            // 7. Настраиваем делегат кнопки для колонки "Состав"
+            int buttonColumnIndex = colCount - 1;
+            ButtonDelegate *buttonDelegate = new ButtonDelegate(this);
+            ui->tableView->setItemDelegateForColumn(buttonColumnIndex, buttonDelegate);
+
+            // 8. Настраиваем ширину колонки с кнопкой
+            ui->tableView->setColumnWidth(buttonColumnIndex, 100);
+
+            // 9. Подключаем сигнал от делегата к слоту (ТОЛЬКО ПРОСМОТР)
+            connect(buttonDelegate, &ButtonDelegate::buttonClicked, this, [this, model](const QModelIndex &proxyIndex) {
+                // Получаем индекс в исходной модели
+                QModelIndex sourceIndex = tableManager->getProxyModel()->mapToSource(proxyIndex);
+                int row = sourceIndex.row();
+
+                // Получаем ID группы (предполагаем, что ID в колонке 0)
+                int groupId = model->index(row, 0).data().toInt();
+                QString groupName = model->index(row, 1).data().toString();
+
+                qDebug() << "Просмотр состава группы:" << groupId << groupName;
+
+                // Получаем список студентов в группе
+                QSqlQuery query;
+                query.prepare(
+                    "SELECT u.full_name FROM users u "
+                    "JOIN group_students gs ON u.id = gs.student_id "
+                    "WHERE gs.group_id = ? AND u.role = 'student' "
+                    "ORDER BY u.full_name"
+                );
+                query.addBindValue(groupId);
+
+                QStringList students;
+                if (query.exec()) {
+                    while (query.next()) {
+                        students << query.value(0).toString();
+                    }
+                }
+
+                // Формируем сообщение
+                QString message;
+                if (students.isEmpty()) {
+                    message = QString("В группе '%1' пока нет учеников.").arg(groupName);
+                } else {
+                    message = QString("Список учеников в группе '%1':\n\n").arg(groupName);
+                    for (int i = 0; i < students.size(); ++i) {
+                        message += QString("%1. %2\n").arg(i + 1).arg(students[i]);
+                    }
+                    message += QString("\nВсего: %1 ученик(ов)").arg(students.size());
+                }
+
+                // Показываем простой диалог ТОЛЬКО ДЛЯ ПРОСМОТРА
+                QMessageBox::information(this, "Состав группы", message);
+            });
         }
         else if (tableName == "schedule")
         {
@@ -158,7 +233,7 @@
     void trainerwindow::on_pushButton_clicked()
     {
         switchToTable("groups", "Группы");
-        updateUI(true, false, true, true, "Название группы", "", "Тренер", "Направление");
+        updateUI(true, false, true, false, "Название группы", "", "Направление", "");
     }
 
     void trainerwindow::on_pushButton_4_clicked()
@@ -234,13 +309,13 @@
                 filters.insert(1, groupName);
             }
 
-            QString direction = ui->filterLineEdit2->text().trimmed();
+            QString direction = ui->filterLineEdit1->text().trimmed();
             if (!direction.isEmpty())
             {
                 filters.insert(2, direction);
             }
 
-            QString trainer = ui->filterLineEdit1->text().trimmed();
+            QString trainer = ui->filterLineEdit2->text().trimmed();
             if (!trainer.isEmpty())
             {
                 filters.insert(3, trainer);
